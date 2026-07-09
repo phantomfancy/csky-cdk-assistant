@@ -22,15 +22,15 @@ export interface DiscoveryReport {
 	standaloneProjects: ProjectInfo[];
 }
 
-export interface Envelope<T> {
-	schemaVersion: number;
-	ok: boolean;
-	data?: T;
-	error?: { code: string; message: string };
+export interface Selection {
+	workspace?: string;
+	projectFile?: string;
+	project: string;
+	buildConfig: string;
 }
 
-export interface Selection {
-	folderUri: string;
+export interface ProjectConfig {
+	schemaVersion: 1;
 	workspace?: string;
 	projectFile?: string;
 	project: string;

@@ -1,6 +1,6 @@
 {
-  "name": "vscode-csky-cdk",
-  "displayName": "C-SKY CDK",
+  "name": "csky-cdk-assistant",
+  "displayName": "C-SKY CDK Assistant",
   "description": "C-SKY Development Kit (CDK) build support in VS Code using cdk-make.",
   "version": "0.0.1",
   "license": "MIT",
@@ -13,79 +13,79 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./out/main.js",
+  "main": "./out/extensionMain.js",
   "contributes": {
     "commands": [
       {
-        "command": "vscode-csky-cdk.configureCdkMake",
+        "command": "csky-cdk-assistant.configureCdkMake",
         "title": "C-SKY CDK: Configure cdk-make Path"
       },
       {
-        "command": "vscode-csky-cdk.selectWorkspace",
+        "command": "csky-cdk-assistant.selectWorkspace",
         "title": "C-SKY CDK: Select Workspace"
       },
       {
-        "command": "vscode-csky-cdk.selectProject",
+        "command": "csky-cdk-assistant.selectProject",
         "title": "C-SKY CDK: Select Project"
       },
       {
-        "command": "vscode-csky-cdk.selectBuildSet",
+        "command": "csky-cdk-assistant.selectBuildSet",
         "title": "C-SKY CDK: Select BuildSet"
       },
       {
-        "command": "vscode-csky-cdk.build",
+        "command": "csky-cdk-assistant.build",
         "title": "C-SKY CDK: Build"
       },
       {
-        "command": "vscode-csky-cdk.rebuild",
+        "command": "csky-cdk-assistant.rebuild",
         "title": "C-SKY CDK: Rebuild"
       },
       {
-        "command": "vscode-csky-cdk.clean",
+        "command": "csky-cdk-assistant.clean",
         "title": "C-SKY CDK: Clean"
       },
       {
-        "command": "vscode-csky-cdk.buildAll",
+        "command": "csky-cdk-assistant.buildAll",
         "title": "C-SKY CDK: Build All Projects"
       },
       {
-        "command": "vscode-csky-cdk.refresh",
+        "command": "csky-cdk-assistant.refresh",
         "title": "C-SKY CDK: Refresh Projects"
       },
       {
-        "command": "vscode-csky-cdk.openConfiguration",
+        "command": "csky-cdk-assistant.openConfiguration",
         "title": "C-SKY CDK: Open Assistant Configuration"
       },
       {
-        "command": "vscode-csky-cdk.doctor",
+        "command": "csky-cdk-assistant.doctor",
         "title": "C-SKY CDK: Run Doctor"
       }
     ],
     "keybindings": [
       {
-        "command": "vscode-csky-cdk.build",
+        "command": "csky-cdk-assistant.build",
         "key": "ctrl+f7",
         "when": "workspaceFolderCount > 0"
       },
       {
-        "command": "vscode-csky-cdk.rebuild",
+        "command": "csky-cdk-assistant.rebuild",
         "key": "ctrl+shift+f7",
         "when": "workspaceFolderCount > 0"
       },
       {
-        "command": "vscode-csky-cdk.clean",
+        "command": "csky-cdk-assistant.clean",
         "key": "alt+f7",
         "when": "workspaceFolderCount > 0"
       }
     ],
     "configuration": {
-      "title": "C-SKY CDK",
+      "title": "C-SKY CDK Assistant",
       "properties": {
-        "vscode-csky-cdk.assistantPath": {
+        "csky-cdk-assistant.cdkMakePath": {
           "type": "string",
           "default": "",
           "scope": "machine",
-          "description": "Optional path to cdk-make-assistant.exe. The bundled executable is used by default."
+          "description": "Path to cdk-make.exe. The standard C-SKY CDK installation path is used when empty."
         }
       }
     },
@@ -113,23 +113,25 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run stage-cli && npm run compile",
-    "stage-cli": "node ./scripts/stage-cli.mjs",
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test"
   },
+  "dependencies": {
+    "fast-xml-parser": "^5.9.3"
+  },
   "devDependencies": {
-    "@types/vscode": "^1.125.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
-    "typescript-eslint": "^8.61.1",
+    "@types/vscode": "^1.125.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
     "eslint": "^10.5.0",
     "typescript": "^6.0.3",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0"
+    "typescript-eslint": "^8.61.1"
   },
   "overrides": {
     "diff": "^8.0.4",

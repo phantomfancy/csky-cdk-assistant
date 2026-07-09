@@ -1,7 +1,6 @@
-# vscode-csky-cdk
+# csky-cdk-assistant
 
-Build C-SKY CDK workspaces and projects from VS Code through
-`cdk-make-assistant`.
+Discover and build C-SKY CDK workspaces and projects directly from VS Code.
 
 ## Features
 
@@ -9,7 +8,7 @@ Build C-SKY CDK workspaces and projects from VS Code through
 - Select Workspace, Project, and BuildSet with Quick Pick.
 - Build, rebuild, clean, or build all projects using VS Code Tasks.
 - Show the active project and BuildSet in the status bar.
-- Share project configuration with the standalone CLI.
+- Store project selection in `.vscode/csky-cdk.json`.
 
 ## Requirements
 
@@ -29,8 +28,11 @@ build task.
 
 ## Extension Settings
 
-`vscode-csky-cdk.assistantPath` optionally overrides the bundled
-`cdk-make-assistant.exe`.
+`csky-cdk-assistant.cdkMakePath` optionally overrides the standard
+`C:\Program Files\C-Sky\CDK\cdk-make.exe` path.
+
+The selected Workspace, Project, and BuildSet are stored in
+`.vscode/csky-cdk.json` below the VS Code workspace folder.
 
 ## Known Issues
 
@@ -40,6 +42,7 @@ VS Code Web, WSL, Remote SSH, flashing, and debugging are not supported.
 
 ### 0.0.1
 
-- Initial CLI-backed project discovery and build support.
+- Direct CDK workspace and project discovery without a companion CLI.
+- Direct `cdk-make.exe` task execution.
 - Command Palette actions for build, rebuild, clean, and project selection.
 - Default Build, Rebuild, and Clean keyboard shortcuts.

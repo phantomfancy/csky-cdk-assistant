@@ -3,4 +3,3 @@ dist
 node_modules
 .vscode-test/
 *.vsix
-resources/win32-x64/cdk-make-assistant.exe
