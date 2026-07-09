@@ -46,3 +46,52 @@ VS Code Web, WSL, Remote SSH, flashing, and debugging are not supported.
 - Direct `cdk-make.exe` task execution.
 - Command Palette actions for build, rebuild, clean, and project selection.
 - Default Build, Rebuild, and Clean keyboard shortcuts.
+
+## Build and Package
+
+Install dependencies from the lock file:
+
+```powershell
+npm ci
+```
+
+Compile the extension with TypeScript:
+
+```powershell
+npx tsc -p ./
+```
+
+`tsc` prints output only when there are errors. A successful build generates
+JavaScript files under `out/`, including `out/extensionMain.js`.
+
+Run lint if needed:
+
+```powershell
+npx oxlint src
+```
+
+Package the extension as a VSIX:
+
+```powershell
+npx --yes --package @vscode/vsce vsce package --allow-missing-repository
+```
+
+The generated file name follows the package name and version, for example:
+
+```text
+csky-cdk-assistant-0.0.2.vsix
+```
+
+Install the generated VSIX locally:
+
+```powershell
+code --install-extension .\csky-cdk-assistant-0.0.2.vsix
+```
+
+If npm cannot write to the default user cache directory on Windows, use a
+workspace-local temporary cache:
+
+```powershell
+npm ci --cache .\.npm-cache
+npx --yes --package @vscode/vsce vsce package --allow-missing-repository
+```
