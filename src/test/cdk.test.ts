@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { buildArguments, discoverProjects, parseProjectXml } from '../cdk';
@@ -34,23 +35,27 @@ suite('C-SKY CDK XML parser', () => {
 		assert.strictEqual(project.defaultBuildConfig, 'BuildSet');
 	});
 
-	test('discovers the real multi-project fixture', async () => {
-		const fixture = path.resolve(__dirname, '..', '..', '..', 'test_cdkws');
-		const report = await discoverProjects({
-			uri: vscode.Uri.file(fixture),
-			name: 'test_cdkws',
-			index: 0,
-		});
+	test('discovers a multi-project workspace', async () => {
+		const root = await createWorkspaceFixture();
+		try {
+			const report = await discoverProjects({
+				uri: root,
+				name: 'test_cdkws',
+				index: 0,
+			});
 
-		assert.strictEqual(report.workspaces.length, 1);
-		assert.deepStrictEqual(
-			report.workspaces[0].projects.map((project) => project.name),
-			['test_cdkproj', 'test2'],
-		);
-		assert.deepStrictEqual(
-			report.workspaces[0].projects[0].buildConfigs,
-			['BuildSet', 'TestBuildSet1', 'TestBuildSet2'],
-		);
+			assert.strictEqual(report.workspaces.length, 1);
+			assert.deepStrictEqual(
+				report.workspaces[0].projects.map((project) => project.name),
+				['test_cdkproj', 'test2'],
+			);
+			assert.deepStrictEqual(
+				report.workspaces[0].projects[0].buildConfigs,
+				['BuildSet', 'TestBuildSet1', 'TestBuildSet2'],
+			);
+		} finally {
+			await vscode.workspace.fs.delete(root, { recursive: true, useTrash: false });
+		}
 	});
 
 	test('maps workspace selection to cdk-make arguments', () => {
@@ -73,3 +78,44 @@ suite('C-SKY CDK XML parser', () => {
 		);
 	});
 });
+
+async function createWorkspaceFixture(): Promise<vscode.Uri> {
+	const root = vscode.Uri.file(path.join(
+		os.tmpdir(),
+		`csky-cdk-assistant-test-${process.pid}-${Date.now()}`,
+	));
+	const project1Dir = vscode.Uri.joinPath(root, 'test_cdkproj');
+	const project2Dir = vscode.Uri.joinPath(root, 'test2');
+	await vscode.workspace.fs.createDirectory(project1Dir);
+	await vscode.workspace.fs.createDirectory(project2Dir);
+	await writeText(vscode.Uri.joinPath(root, 'test.cdkws'), `
+<CDK_Workspace Name="test_cdkws">
+	<Project Name="test_cdkproj" Path="test_cdkproj/test_cdkproj.cdkproj" Active="yes"/>
+	<Project Name="test2" Path="test2/test2.cdkproj"/>
+	<BuildMatrix>
+		<WorkspaceConfiguration Name="Debug" Selected="yes">
+			<Project Name="test_cdkproj" ConfigName="BuildSet"/>
+			<Project Name="test2" ConfigName="BuildSet"/>
+		</WorkspaceConfiguration>
+	</BuildMatrix>
+</CDK_Workspace>`);
+	await writeText(vscode.Uri.joinPath(project1Dir, 'test_cdkproj.cdkproj'), `
+<Project Name="test_cdkproj" Language="C" Type="Application Without OS">
+	<BuildConfigs>
+		<BuildConfig Name="BuildSet"/>
+		<BuildConfig Name="TestBuildSet1"/>
+		<BuildConfig Name="TestBuildSet2"/>
+	</BuildConfigs>
+</Project>`);
+	await writeText(vscode.Uri.joinPath(project2Dir, 'test2.cdkproj'), `
+<Project Name="test2" Language="C" Type="Application Without OS">
+	<BuildConfigs>
+		<BuildConfig Name="BuildSet"/>
+	</BuildConfigs>
+</Project>`);
+	return root;
+}
+
+async function writeText(uri: vscode.Uri, content: string): Promise<void> {
+	await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(content.trim()));
+}
