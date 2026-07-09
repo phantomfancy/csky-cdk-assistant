@@ -5,7 +5,12 @@ import {
     resolveCdkMakePath,
 } from './cdk';
 import { normalizePathSeparators } from './pathUtils';
-import { loadSelection, projectConfigUri, saveSelection } from './projectConfig';
+import {
+    loadSelection,
+    projectConfigUri,
+    saveSelection,
+    selectionsEqual,
+} from './projectConfig';
 import {
     BuildAction,
     DiscoveryReport,
@@ -18,7 +23,7 @@ type SelectionMode = 'workspace' | 'project' | 'buildConfig' | 'refresh';
 
 export function activate(context: vscode.ExtensionContext): void {
     const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    status.command = 'csky-cdk-assistant.selectProject';
+    status.command = 'csky-cdk-assistant.selectWorkspace';
     status.tooltip = '选择 C-SKY CDK 项目和 BuildSet';
     context.subscriptions.push(status);
     const register = (id: string, handler: () => unknown): void => {
@@ -133,13 +138,16 @@ async function selectConfiguration(
             },
             () => discoverProjects(folder),
         );
+        const current = await loadSelection(folder);
         const selection = await chooseFromReport(
             report,
-            await loadSelection(folder),
+            current,
             mode,
         );
         if (selection) {
-            await saveSelection(folder, selection);
+            if (!selectionsEqual(current, selection)) {
+                await saveSelection(folder, selection);
+            }
             updateStatus(status, selection);
         }
     });

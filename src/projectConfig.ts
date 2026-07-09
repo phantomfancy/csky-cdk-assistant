@@ -67,6 +67,19 @@ export async function saveSelection(
     await vscode.workspace.fs.rename(temporary, target, { overwrite: true });
 }
 
+export function selectionsEqual(
+    left: Selection | undefined,
+    right: Selection | undefined,
+): boolean {
+    if (!left || !right) {
+        return left === right;
+    }
+    return normalizeOptionalPath(left.workspace) === normalizeOptionalPath(right.workspace) &&
+        normalizeOptionalPath(left.projectFile) === normalizeOptionalPath(right.projectFile) &&
+        left.project === right.project &&
+        left.buildConfig === right.buildConfig;
+}
+
 export function parseProjectConfig(text: string): ProjectConfig {
     let value: unknown;
     try {
@@ -93,6 +106,10 @@ export function parseProjectConfig(text: string): ProjectConfig {
         project: requiredString(config.project, 'project'),
         buildConfig: requiredString(config.buildConfig, 'buildConfig'),
     };
+}
+
+function normalizeOptionalPath(filePath: string | undefined): string | undefined {
+    return filePath ? normalizePathSeparators(filePath) : undefined;
 }
 
 function relativePath(
