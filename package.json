@@ -3,6 +3,7 @@
     "displayName": "C-SKY CDK Assistant",
     "description": "C-SKY Development Kit (CDK) build support in VS Code using cdk-make.",
     "version": "0.0.2",
+    "icon": "resources/cdk_logo.png",
     "publisher": "phantomfancy",
     "author": "phantomfancy",
     "license": "MIT",
