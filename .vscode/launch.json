@@ -24,7 +24,7 @@
                 "${workspaceFolder}/node_modules/**",
                 "${workspaceFolder}/.vscode-test/**"
             ],
-            "preLaunchTask": "${defaultBuildTask}"
+            "preLaunchTask": "npm: compile"
         }
     ]
 }
