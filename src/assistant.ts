@@ -65,7 +65,7 @@ export class AssistantClient {
 
 export function resolveAssistantPath(context: vscode.ExtensionContext): string {
 	const configured = vscode.workspace
-		.getConfiguration('vscode-cdk')
+		.getConfiguration('vscode-csky-cdk')
 		.get<string>('assistantPath')
 		?.trim();
 	if (configured) {
@@ -92,7 +92,7 @@ export function resolveAssistantPath(context: vscode.ExtensionContext): string {
 		return development;
 	}
 	throw new Error(
-		'找不到 cdk-make-assistant.exe；请设置 vscode-cdk.assistantPath 或重新打包扩展',
+		'找不到 cdk-make-assistant.exe；请设置 vscode-csky-cdk.assistantPath 或重新打包扩展',
 	);
 }
 

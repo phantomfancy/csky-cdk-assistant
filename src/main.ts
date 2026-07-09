@@ -2,20 +2,20 @@ import * as vscode from 'vscode';
 import { AssistantClient, resolveAssistantPath } from './assistant';
 import { BuildAction, DiscoveryReport, ProjectInfo, Selection, WorkspaceInfo } from './types';
 
-const statePrefix = 'vscode-cdk.selection.';
+const statePrefix = 'vscode-csky-cdk.selection.';
 type SelectionMode = 'workspace' | 'project' | 'buildConfig' | 'refresh';
 
 export function activate(context: vscode.ExtensionContext): void {
 	const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-	status.command = 'vscode-cdk.selectProject';
-	status.tooltip = '选择 CDK 项目和 BuildSet';
+	status.command = 'vscode-csky-cdk.selectProject';
+	status.tooltip = '选择 C-SKY CDK 项目和 BuildSet';
 	context.subscriptions.push(status);
 	const client = (): AssistantClient => new AssistantClient(resolveAssistantPath(context));
 	const register = (id: string, handler: () => unknown): void => {
 		context.subscriptions.push(vscode.commands.registerCommand(id, handler));
 	};
 
-	register('vscode-cdk.configureCdkMake', () => showErrors(async () => {
+	register('vscode-csky-cdk.configureCdkMake', () => showErrors(async () => {
 		const selected = await vscode.window.showOpenDialog({
 			canSelectFiles: true,
 			canSelectFolders: false,
@@ -28,15 +28,15 @@ export function activate(context: vscode.ExtensionContext): void {
 			void vscode.window.showInformationMessage('已保存 cdk-make.exe 路径');
 		}
 	}));
-	register('vscode-cdk.selectWorkspace', () =>
+	register('vscode-csky-cdk.selectWorkspace', () =>
 		selectConfiguration(context, client(), status, 'workspace'));
-	register('vscode-cdk.selectProject', () =>
+	register('vscode-csky-cdk.selectProject', () =>
 		selectConfiguration(context, client(), status, 'project'));
-	register('vscode-cdk.selectBuildSet', () =>
+	register('vscode-csky-cdk.selectBuildSet', () =>
 		selectConfiguration(context, client(), status, 'buildConfig'));
-	register('vscode-cdk.refresh', () =>
+	register('vscode-csky-cdk.refresh', () =>
 		selectConfiguration(context, client(), status, 'refresh'));
-	register('vscode-cdk.openConfiguration', () => showErrors(async () => {
+	register('vscode-csky-cdk.openConfiguration', () => showErrors(async () => {
 		const folder = await chooseFolder();
 		if (folder) {
 			await vscode.window.showTextDocument(
@@ -44,14 +44,14 @@ export function activate(context: vscode.ExtensionContext): void {
 			);
 		}
 	}));
-	register('vscode-cdk.doctor', () => runDoctor(context));
-	register('vscode-cdk.build', () => runSelected(context, client(), status, 'build'));
-	register('vscode-cdk.rebuild', () => runSelected(context, client(), status, 'rebuild'));
-	register('vscode-cdk.clean', () => runSelected(context, client(), status, 'clean'));
-	register('vscode-cdk.buildAll', () => runSelected(context, client(), status, 'build', true));
+	register('vscode-csky-cdk.doctor', () => runDoctor(context));
+	register('vscode-csky-cdk.build', () => runSelected(context, client(), status, 'build'));
+	register('vscode-csky-cdk.rebuild', () => runSelected(context, client(), status, 'rebuild'));
+	register('vscode-csky-cdk.clean', () => runSelected(context, client(), status, 'clean'));
+	register('vscode-csky-cdk.buildAll', () => runSelected(context, client(), status, 'build', true));
 
 	context.subscriptions.push(
-		vscode.tasks.registerTaskProvider('cdk', new CdkTaskProvider(context)),
+		vscode.tasks.registerTaskProvider('csky-cdk', new CdkTaskProvider(context)),
 	);
 	void refreshStatus(context, status);
 }
@@ -149,7 +149,7 @@ async function chooseFromReport(
 ): Promise<Selection | undefined> {
 	if (report.workspaces.length > 0) {
 		let workspace = report.workspaces.find((item) => item.path === current?.workspace);
-		if (!workspace || mode === 'workspace' || mode === 'refresh') {
+		if (!workspace || mode === 'workspace') {
 			workspace = await pickItem(
 				report.workspaces,
 				'选择 CDK Workspace',
@@ -160,7 +160,7 @@ async function chooseFromReport(
 			return undefined;
 		}
 		let project = workspace.projects.find((item) => item.name === current?.project);
-		if (!project || mode !== 'buildConfig') {
+		if (!project || mode === 'workspace' || mode === 'project') {
 			project = await pickProject(workspace);
 		}
 		if (!project) {
@@ -245,7 +245,6 @@ async function saveSelection(
 	folder: vscode.WorkspaceFolder,
 	selection: Selection,
 ): Promise<void> {
-	await context.workspaceState.update(stateKey(folder), selection);
 	await client.persistSelection(
 		folder.uri.fsPath,
 		selection.workspace,
@@ -253,6 +252,7 @@ async function saveSelection(
 		selection.project,
 		selection.buildConfig,
 	);
+	await context.workspaceState.update(stateKey(folder), selection);
 }
 
 function loadSelection(
@@ -296,10 +296,10 @@ function createTask(
 		args.push('--project-file', selection.projectFile, '--config', selection.buildConfig);
 	}
 	const task = new vscode.Task(
-		{ type: 'cdk', action, folder: folder.name },
+		{ type: 'csky-cdk', action, folder: folder.name },
 		folder,
-		`CDK ${action}${all ? ' all' : ''}`,
-		'cdk',
+		`C-SKY CDK ${action}${all ? ' all' : ''}`,
+		'csky-cdk',
 		new vscode.ProcessExecution(resolveAssistantPath(context), args),
 		[],
 	);
@@ -321,10 +321,10 @@ async function runDoctor(context: vscode.ExtensionContext): Promise<void> {
 			return;
 		}
 		const task = new vscode.Task(
-			{ type: 'cdk', action: 'doctor' },
+			{ type: 'csky-cdk', action: 'doctor' },
 			folder,
-			'CDK doctor',
-			'cdk',
+			'C-SKY CDK doctor',
+			'csky-cdk',
 			new vscode.ProcessExecution(resolveAssistantPath(context), ['doctor', folder.uri.fsPath]),
 		);
 		await vscode.tasks.executeTask(task);
@@ -340,7 +340,7 @@ async function refreshStatus(
 	if (selection) {
 		updateStatus(status, selection);
 	} else if (folder) {
-		status.text = '$(tools) CDK: 选择项目';
+		status.text = '$(tools) C-SKY CDK: 选择项目';
 		status.show();
 	} else {
 		status.hide();

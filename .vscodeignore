@@ -10,3 +10,6 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+out/test/**
+out/extension.js
+out/extension.js.map

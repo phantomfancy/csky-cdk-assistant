@@ -1,15 +1,15 @@
 {
-  "name": "vscode-cdk",
-  "displayName": "vscode-cdk",
-  "description": "C-SKY Development Kit(CDK) build support in VSCode using cdk-make.",
+  "name": "vscode-csky-cdk",
+  "displayName": "C-SKY CDK",
+  "description": "C-SKY Development Kit (CDK) build support in VS Code using cdk-make.",
   "version": "0.0.1",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.125.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -17,71 +17,71 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-cdk.configureCdkMake",
-        "title": "CDK: Configure cdk-make Path"
+        "command": "vscode-csky-cdk.configureCdkMake",
+        "title": "C-SKY CDK: Configure cdk-make Path"
       },
       {
-        "command": "vscode-cdk.selectWorkspace",
-        "title": "CDK: Select Workspace"
+        "command": "vscode-csky-cdk.selectWorkspace",
+        "title": "C-SKY CDK: Select Workspace"
       },
       {
-        "command": "vscode-cdk.selectProject",
-        "title": "CDK: Select Project"
+        "command": "vscode-csky-cdk.selectProject",
+        "title": "C-SKY CDK: Select Project"
       },
       {
-        "command": "vscode-cdk.selectBuildSet",
-        "title": "CDK: Select BuildSet"
+        "command": "vscode-csky-cdk.selectBuildSet",
+        "title": "C-SKY CDK: Select BuildSet"
       },
       {
-        "command": "vscode-cdk.build",
-        "title": "CDK: Build"
+        "command": "vscode-csky-cdk.build",
+        "title": "C-SKY CDK: Build"
       },
       {
-        "command": "vscode-cdk.rebuild",
-        "title": "CDK: Rebuild"
+        "command": "vscode-csky-cdk.rebuild",
+        "title": "C-SKY CDK: Rebuild"
       },
       {
-        "command": "vscode-cdk.clean",
-        "title": "CDK: Clean"
+        "command": "vscode-csky-cdk.clean",
+        "title": "C-SKY CDK: Clean"
       },
       {
-        "command": "vscode-cdk.buildAll",
-        "title": "CDK: Build All Projects"
+        "command": "vscode-csky-cdk.buildAll",
+        "title": "C-SKY CDK: Build All Projects"
       },
       {
-        "command": "vscode-cdk.refresh",
-        "title": "CDK: Refresh Projects"
+        "command": "vscode-csky-cdk.refresh",
+        "title": "C-SKY CDK: Refresh Projects"
       },
       {
-        "command": "vscode-cdk.openConfiguration",
-        "title": "CDK: Open Assistant Configuration"
+        "command": "vscode-csky-cdk.openConfiguration",
+        "title": "C-SKY CDK: Open Assistant Configuration"
       },
       {
-        "command": "vscode-cdk.doctor",
-        "title": "CDK: Run Doctor"
+        "command": "vscode-csky-cdk.doctor",
+        "title": "C-SKY CDK: Run Doctor"
       }
     ],
     "keybindings": [
       {
-        "command": "vscode-cdk.build",
-        "key": "ctrl+alt+b",
-        "mac": "cmd+alt+b"
+        "command": "vscode-csky-cdk.build",
+        "key": "ctrl+f7",
+        "when": "workspaceFolderCount > 0"
       },
       {
-        "command": "vscode-cdk.rebuild",
-        "key": "ctrl+alt+r",
-        "mac": "cmd+alt+r"
+        "command": "vscode-csky-cdk.rebuild",
+        "key": "ctrl+shift+f7",
+        "when": "workspaceFolderCount > 0"
       },
       {
-        "command": "vscode-cdk.clean",
-        "key": "ctrl+alt+k",
-        "mac": "cmd+alt+k"
+        "command": "vscode-csky-cdk.clean",
+        "key": "alt+f7",
+        "when": "workspaceFolderCount > 0"
       }
     ],
     "configuration": {
-      "title": "VS Code CDK",
+      "title": "C-SKY CDK",
       "properties": {
-        "vscode-cdk.assistantPath": {
+        "vscode-csky-cdk.assistantPath": {
           "type": "string",
           "default": "",
           "scope": "machine",
@@ -91,7 +91,7 @@
     },
     "taskDefinitions": [
       {
-        "type": "cdk",
+        "type": "csky-cdk",
         "required": [
           "action"
         ],
