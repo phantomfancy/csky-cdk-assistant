@@ -21,11 +21,21 @@ import {
 
 type SelectionMode = 'workspace' | 'project' | 'buildConfig' | 'refresh';
 
+interface StatusBarControls {
+    selection: vscode.StatusBarItem;
+    build: vscode.StatusBarItem;
+    rebuild: vscode.StatusBarItem;
+    clean: vscode.StatusBarItem;
+}
+
 export function activate(context: vscode.ExtensionContext): void {
-    const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    status.command = 'csky-cdk-assistant.selectWorkspace';
-    status.tooltip = '选择 C-SKY CDK 项目和 BuildSet';
-    context.subscriptions.push(status);
+    const status = createStatusBarControls();
+    context.subscriptions.push(
+        status.selection,
+        status.build,
+        status.rebuild,
+        status.clean,
+    );
     const register = (id: string, handler: () => unknown): void => {
         context.subscriptions.push(vscode.commands.registerCommand(id, handler));
     };
@@ -100,7 +110,7 @@ async function configureCdkMake(): Promise<void> {
 }
 
 async function runSelected(
-    status: vscode.StatusBarItem,
+    status: StatusBarControls,
     action: BuildAction,
     all = false,
 ): Promise<void> {
@@ -116,14 +126,14 @@ async function runSelected(
                 return;
             }
             await saveSelection(folder, selection);
-            updateStatus(status, selection);
+            updateStatus(status.selection, selection);
         }
         await vscode.tasks.executeTask(createTask(folder, selection, action, all));
     });
 }
 
 async function selectConfiguration(
-    status: vscode.StatusBarItem,
+    status: StatusBarControls,
     mode: SelectionMode,
 ): Promise<void> {
     await showErrors(async () => {
@@ -148,7 +158,8 @@ async function selectConfiguration(
             if (!selectionsEqual(current, selection)) {
                 await saveSelection(folder, selection);
             }
-            updateStatus(status, selection);
+            updateStatus(status.selection, selection);
+            showActionButtons(status);
         }
     });
 }
@@ -330,28 +341,88 @@ async function runDoctor(): Promise<void> {
     });
 }
 
-async function refreshStatus(status: vscode.StatusBarItem): Promise<void> {
+function createStatusBarControls(): StatusBarControls {
+    const selection = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Left,
+        100,
+    );
+    selection.command = 'csky-cdk-assistant.selectWorkspace';
+    selection.tooltip = '选择 C-SKY CDK 项目和 BuildSet';
+
+    const build = createActionStatusBarItem(
+        '$(play)',
+        'csky-cdk-assistant.build',
+        'C-SKY CDK: 生成当前项目',
+        99,
+    );
+    const rebuild = createActionStatusBarItem(
+        '$(sync)',
+        'csky-cdk-assistant.rebuild',
+        'C-SKY CDK: 重新生成当前项目',
+        98,
+    );
+    const clean = createActionStatusBarItem(
+        '$(trash)',
+        'csky-cdk-assistant.clean',
+        'C-SKY CDK: 清理当前项目',
+        97,
+    );
+
+    return { selection, build, rebuild, clean };
+}
+
+function createActionStatusBarItem(
+    text: string,
+    command: string,
+    tooltip: string,
+    priority: number,
+): vscode.StatusBarItem {
+    const item = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Left,
+        priority,
+    );
+    item.text = text;
+    item.command = command;
+    item.tooltip = tooltip;
+    return item;
+}
+
+async function refreshStatus(status: StatusBarControls): Promise<void> {
     const folder = vscode.workspace.workspaceFolders?.[0];
     if (!folder) {
-        status.hide();
+        status.selection.hide();
+        hideActionButtons(status);
         return;
     }
+    showActionButtons(status);
     try {
         const selection = await loadSelection(folder);
         if (selection) {
-            updateStatus(status, selection);
+            updateStatus(status.selection, selection);
             return;
         }
     } catch (error) {
-        status.tooltip = error instanceof Error ? error.message : String(error);
+        status.selection.tooltip = error instanceof Error ? error.message : String(error);
     }
-    status.text = '$(tools) C-SKY CDK: 选择项目';
-    status.show();
+    status.selection.text = '$(tools) C-SKY CDK: 选择项目';
+    status.selection.show();
 }
 
 function updateStatus(status: vscode.StatusBarItem, selection: Selection): void {
     status.text = `$(tools) ${selection.project} [${selection.buildConfig}]`;
     status.show();
+}
+
+function showActionButtons(status: StatusBarControls): void {
+    status.build.show();
+    status.rebuild.show();
+    status.clean.show();
+}
+
+function hideActionButtons(status: StatusBarControls): void {
+    status.build.hide();
+    status.rebuild.hide();
+    status.clean.hide();
 }
 
 async function showErrors(action: () => Promise<void>): Promise<void> {
