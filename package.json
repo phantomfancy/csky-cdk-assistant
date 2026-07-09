@@ -1,140 +1,140 @@
 {
-  "name": "csky-cdk-assistant",
-  "displayName": "C-SKY CDK Assistant",
-  "description": "C-SKY Development Kit (CDK) build support in VS Code using cdk-make.",
-  "version": "0.0.2",
-  "author": "phantomfancy",
-  "license": "MIT",
-  "engines": {
-    "vscode": "^1.125.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "main": "./out/extensionMain.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "csky-cdk-assistant.configureCdkMake",
-        "title": "C-SKY CDK: Configure cdk-make Path"
-      },
-      {
-        "command": "csky-cdk-assistant.selectWorkspace",
-        "title": "C-SKY CDK: Select Workspace"
-      },
-      {
-        "command": "csky-cdk-assistant.selectProject",
-        "title": "C-SKY CDK: Select Project"
-      },
-      {
-        "command": "csky-cdk-assistant.selectBuildSet",
-        "title": "C-SKY CDK: Select BuildSet"
-      },
-      {
-        "command": "csky-cdk-assistant.build",
-        "title": "C-SKY CDK: Build"
-      },
-      {
-        "command": "csky-cdk-assistant.rebuild",
-        "title": "C-SKY CDK: Rebuild"
-      },
-      {
-        "command": "csky-cdk-assistant.clean",
-        "title": "C-SKY CDK: Clean"
-      },
-      {
-        "command": "csky-cdk-assistant.buildAll",
-        "title": "C-SKY CDK: Build All Projects"
-      },
-      {
-        "command": "csky-cdk-assistant.refresh",
-        "title": "C-SKY CDK: Refresh Projects"
-      },
-      {
-        "command": "csky-cdk-assistant.openConfiguration",
-        "title": "C-SKY CDK: Open Assistant Configuration"
-      },
-      {
-        "command": "csky-cdk-assistant.doctor",
-        "title": "C-SKY CDK: Run Doctor"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "csky-cdk-assistant.build",
-        "key": "ctrl+f7",
-        "when": "workspaceFolderCount > 0"
-      },
-      {
-        "command": "csky-cdk-assistant.rebuild",
-        "key": "ctrl+shift+f7",
-        "when": "workspaceFolderCount > 0"
-      },
-      {
-        "command": "csky-cdk-assistant.clean",
-        "key": "alt+f7",
-        "when": "workspaceFolderCount > 0"
-      }
-    ],
-    "configuration": {
-      "title": "C-SKY CDK Assistant",
-      "properties": {
-        "csky-cdk-assistant.cdkMakePath": {
-          "type": "string",
-          "default": "",
-          "scope": "machine",
-          "description": "Path to cdk-make.exe. The standard C-SKY CDK installation path is used when empty."
-        }
-      }
+    "name": "csky-cdk-assistant",
+    "displayName": "C-SKY CDK Assistant",
+    "description": "C-SKY Development Kit (CDK) build support in VS Code using cdk-make.",
+    "version": "0.0.2",
+    "author": "phantomfancy",
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.125.0"
     },
-    "taskDefinitions": [
-      {
-        "type": "csky-cdk",
-        "required": [
-          "action"
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./out/extensionMain.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "csky-cdk-assistant.configureCdkMake",
+                "title": "C-SKY CDK: Configure cdk-make Path"
+            },
+            {
+                "command": "csky-cdk-assistant.selectWorkspace",
+                "title": "C-SKY CDK: Select Workspace"
+            },
+            {
+                "command": "csky-cdk-assistant.selectProject",
+                "title": "C-SKY CDK: Select Project"
+            },
+            {
+                "command": "csky-cdk-assistant.selectBuildSet",
+                "title": "C-SKY CDK: Select BuildSet"
+            },
+            {
+                "command": "csky-cdk-assistant.build",
+                "title": "C-SKY CDK: Build"
+            },
+            {
+                "command": "csky-cdk-assistant.rebuild",
+                "title": "C-SKY CDK: Rebuild"
+            },
+            {
+                "command": "csky-cdk-assistant.clean",
+                "title": "C-SKY CDK: Clean"
+            },
+            {
+                "command": "csky-cdk-assistant.buildAll",
+                "title": "C-SKY CDK: Build All Projects"
+            },
+            {
+                "command": "csky-cdk-assistant.refresh",
+                "title": "C-SKY CDK: Refresh Projects"
+            },
+            {
+                "command": "csky-cdk-assistant.openConfiguration",
+                "title": "C-SKY CDK: Open Assistant Configuration"
+            },
+            {
+                "command": "csky-cdk-assistant.doctor",
+                "title": "C-SKY CDK: Run Doctor"
+            }
         ],
-        "properties": {
-          "action": {
-            "type": "string",
-            "enum": [
-              "build",
-              "rebuild",
-              "clean",
-              "doctor"
-            ]
-          },
-          "folder": {
-            "type": "string"
-          }
-        }
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "oxlint src",
-    "test": "vscode-test"
-  },
-  "dependencies": {
-    "fast-xml-parser": "^5.9.3"
-  },
-  "devDependencies": {
-    "@types/mocha": "^10.0.10",
-    "@types/node": "24.x",
-    "@types/vscode": "^1.125.0",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0",
-    "oxlint": "^1.73.0",
-    "typescript": "^7.0.2"
-  },
-  "overrides": {
-    "diff": "^8.0.4",
-    "serialize-javascript": "^7.0.6"
-  }
+        "keybindings": [
+            {
+                "command": "csky-cdk-assistant.build",
+                "key": "ctrl+f7",
+                "when": "workspaceFolderCount > 0"
+            },
+            {
+                "command": "csky-cdk-assistant.rebuild",
+                "key": "ctrl+shift+f7",
+                "when": "workspaceFolderCount > 0"
+            },
+            {
+                "command": "csky-cdk-assistant.clean",
+                "key": "alt+f7",
+                "when": "workspaceFolderCount > 0"
+            }
+        ],
+        "configuration": {
+            "title": "C-SKY CDK Assistant",
+            "properties": {
+                "csky-cdk-assistant.cdkMakePath": {
+                    "type": "string",
+                    "default": "",
+                    "scope": "machine",
+                    "description": "Path to cdk-make.exe. The standard C-SKY CDK installation path is used when empty."
+                }
+            }
+        },
+        "taskDefinitions": [
+            {
+                "type": "csky-cdk",
+                "required": [
+                    "action"
+                ],
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "build",
+                            "rebuild",
+                            "clean",
+                            "doctor"
+                        ]
+                    },
+                    "folder": {
+                        "type": "string"
+                    }
+                }
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "pretest": "npm run compile && npm run lint",
+        "lint": "oxlint src",
+        "test": "vscode-test"
+    },
+    "dependencies": {
+        "fast-xml-parser": "^5.9.3"
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.10",
+        "@types/node": "24.x",
+        "@types/vscode": "^1.125.0",
+        "@vscode/test-cli": "^0.0.15",
+        "@vscode/test-electron": "^3.0.0",
+        "oxlint": "^1.73.0",
+        "typescript": "^7.0.2"
+    },
+    "overrides": {
+        "diff": "^8.0.4",
+        "serialize-javascript": "^7.0.6"
+    }
 }
