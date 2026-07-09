@@ -19,6 +19,7 @@ suite('C-SKY CDK XML parser', () => {
 		);
 
 		assert.strictEqual(project.name, 'app');
+		assert.strictEqual(project.path, 'C:/work/app.cdkproj');
 		assert.strictEqual(project.language, 'C');
 		assert.deepStrictEqual(project.buildConfigs, ['Debug', 'Release']);
 		assert.strictEqual(project.defaultBuildConfig, 'Release');
@@ -45,10 +46,15 @@ suite('C-SKY CDK XML parser', () => {
 			});
 
 			assert.strictEqual(report.workspaces.length, 1);
+			assert.strictEqual(report.root.includes('\\'), false);
+			assert.strictEqual(report.workspaces[0].path.includes('\\'), false);
 			assert.deepStrictEqual(
 				report.workspaces[0].projects.map((project) => project.name),
 				['test_cdkproj', 'test2'],
 			);
+			for (const project of report.workspaces[0].projects) {
+				assert.strictEqual(project.path.includes('\\'), false);
+			}
 			assert.deepStrictEqual(
 				report.workspaces[0].projects[0].buildConfigs,
 				['BuildSet', 'TestBuildSet1', 'TestBuildSet2'],
@@ -67,7 +73,7 @@ suite('C-SKY CDK XML parser', () => {
 			}, 'rebuild'),
 			[
 				'-w',
-				String.raw`C:\work\test.cdkws`,
+				'C:/work/test.cdkws',
 				'-p',
 				'app',
 				'-c',

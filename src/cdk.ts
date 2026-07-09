@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { XMLParser } from 'fast-xml-parser';
+import { normalizePathSeparators } from './pathUtils';
 import {
 	BuildAction,
 	DiscoveryReport,
@@ -10,7 +11,7 @@ import {
 	WorkspaceInfo,
 } from './types';
 
-const defaultCdkMakePath = String.raw`C:\Program Files\C-Sky\CDK\cdk-make.exe`;
+const defaultCdkMakePath = 'C:/Program Files/C-Sky/CDK/cdk-make.exe';
 const excludePattern = '**/{.git,node_modules,target,dist,out}/**';
 const xmlParser = new XMLParser({
 	ignoreAttributes: false,
@@ -26,7 +27,7 @@ export function resolveCdkMakePath(): string {
 		.getConfiguration('csky-cdk-assistant')
 		.get<string>('cdkMakePath')
 		?.trim();
-	const executable = configured || defaultCdkMakePath;
+	const executable = normalizePathSeparators(configured || defaultCdkMakePath);
 	if (!fs.existsSync(executable)) {
 		throw new Error(
 			`找不到 cdk-make.exe: ${executable}。请设置 csky-cdk-assistant.cdkMakePath`,
@@ -52,7 +53,7 @@ export async function discoverProjects(
 	}
 
 	return {
-		root: folder.uri.fsPath,
+		root: normalizePathSeparators(folder.uri.fsPath),
 		workspaces,
 		standaloneProjects,
 	};
@@ -79,7 +80,7 @@ export function parseProjectXml(
 
 	return {
 		name: attribute(project, 'Name'),
-		path: projectPath,
+		path: normalizePathSeparators(projectPath),
 		language: optionalAttribute(project, 'Language'),
 		projectType: optionalAttribute(project, 'Type'),
 		buildConfigs,
@@ -94,7 +95,7 @@ export function buildArguments(
 ): string[] {
 	const args: string[] = [];
 	if (selection.workspace) {
-		args.push('-w', selection.workspace);
+		args.push('-w', normalizePathSeparators(selection.workspace));
 		if (all) {
 			args.push('-a');
 		} else {
@@ -104,7 +105,7 @@ export function buildArguments(
 		if (all) {
 			throw new Error('直接 .cdkproj 模式不支持 Build All');
 		}
-		args.push('-p', selection.projectFile, '-c', selection.buildConfig);
+		args.push('-p', normalizePathSeparators(selection.projectFile), '-c', selection.buildConfig);
 	} else {
 		throw new Error('缺少 Workspace 或 Project 文件配置');
 	}
@@ -129,7 +130,7 @@ async function parseWorkspaceFile(uri: vscode.Uri): Promise<WorkspaceInfo> {
 
 	return {
 		name: attribute(workspace, 'Name'),
-		path: uri.fsPath,
+		path: normalizePathSeparators(uri.fsPath),
 		activeProject: activeProject
 			? attribute(activeProject, 'Name')
 			: undefined,
@@ -144,7 +145,9 @@ async function parseProjectFile(
 	try {
 		return parseProjectXml(await readText(uri), uri.fsPath, defaultBuildConfig);
 	} catch (error) {
-		throw new Error(`无法解析 ${uri.fsPath}: ${errorMessage(error)}`);
+		throw new Error(
+			`无法解析 ${normalizePathSeparators(uri.fsPath)}: ${errorMessage(error)}`,
+		);
 	}
 }
 
@@ -185,13 +188,18 @@ async function discoverByExtension(
 		.map(([name]) => vscode.Uri.joinPath(folder.uri, name));
 	if (immediate.length > 0) {
 		return immediate.sort((left, right) =>
-			left.fsPath.localeCompare(right.fsPath));
+			normalizePathSeparators(left.fsPath).localeCompare(
+				normalizePathSeparators(right.fsPath),
+			));
 	}
 	const found = await vscode.workspace.findFiles(
 		new vscode.RelativePattern(folder, `**/*.${extension}`),
 		excludePattern,
 	);
-	return found.sort((left, right) => left.fsPath.localeCompare(right.fsPath));
+	return found.sort((left, right) =>
+		normalizePathSeparators(left.fsPath).localeCompare(
+			normalizePathSeparators(right.fsPath),
+		));
 }
 
 async function readText(uri: vscode.Uri): Promise<string> {
@@ -200,7 +208,9 @@ async function readText(uri: vscode.Uri): Promise<string> {
 			await vscode.workspace.fs.readFile(uri),
 		);
 	} catch (error) {
-		throw new Error(`无法读取 ${uri.fsPath}: ${errorMessage(error)}`);
+		throw new Error(
+			`无法读取 ${normalizePathSeparators(uri.fsPath)}: ${errorMessage(error)}`,
+		);
 	}
 }
 

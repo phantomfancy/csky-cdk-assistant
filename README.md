@@ -29,7 +29,7 @@ build task.
 ## Extension Settings
 
 `csky-cdk-assistant.cdkMakePath` optionally overrides the standard
-`C:\Program Files\C-Sky\CDK\cdk-make.exe` path.
+`C:/Program Files/C-Sky/CDK/cdk-make.exe` path.
 
 The selected Workspace, Project, and BuildSet are stored in
 `.vscode/csky-cdk.json` below the VS Code workspace folder.
@@ -85,13 +85,13 @@ csky-cdk-assistant-0.0.2.vsix
 Install the generated VSIX locally:
 
 ```powershell
-code --install-extension .\csky-cdk-assistant-0.0.2.vsix
+code --install-extension ./csky-cdk-assistant-0.0.2.vsix
 ```
 
 If npm cannot write to the default user cache directory on Windows, use a
 workspace-local temporary cache:
 
 ```powershell
-npm ci --cache .\.npm-cache
+npm ci --cache ./.npm-cache
 npx --yes --package @vscode/vsce vsce package --allow-missing-repository
 ```

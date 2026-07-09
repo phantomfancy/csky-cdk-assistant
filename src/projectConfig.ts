@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { normalizePathSeparators } from './pathUtils';
 import { ProjectConfig, Selection } from './types';
 
 const configDirectory = '.vscode';
@@ -27,10 +28,10 @@ export async function loadSelection(
 	);
 	return {
 		workspace: config.workspace
-			? path.resolve(folder.uri.fsPath, config.workspace)
+			? normalizePathSeparators(path.resolve(folder.uri.fsPath, config.workspace))
 			: undefined,
 		projectFile: config.projectFile
-			? path.resolve(folder.uri.fsPath, config.projectFile)
+			? normalizePathSeparators(path.resolve(folder.uri.fsPath, config.projectFile))
 			: undefined,
 		project: config.project,
 		buildConfig: config.buildConfig,
@@ -100,9 +101,11 @@ function relativePath(
 ): string {
 	const relative = path.relative(folder.uri.fsPath, absolutePath);
 	if (relative.startsWith('..') || path.isAbsolute(relative)) {
-		throw new Error(`配置路径不在 Workspace Folder 中: ${absolutePath}`);
+		throw new Error(
+			`配置路径不在 Workspace Folder 中: ${normalizePathSeparators(absolutePath)}`,
+		);
 	}
-	return relative.split(path.sep).join('/');
+	return normalizePathSeparators(relative);
 }
 
 function requiredString(value: unknown, name: string): string {

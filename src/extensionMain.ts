@@ -4,6 +4,7 @@ import {
 	discoverProjects,
 	resolveCdkMakePath,
 } from './cdk';
+import { normalizePathSeparators } from './pathUtils';
 import { loadSelection, projectConfigUri, saveSelection } from './projectConfig';
 import {
 	BuildAction,
@@ -84,7 +85,11 @@ async function configureCdkMake(): Promise<void> {
 		}
 		await vscode.workspace
 			.getConfiguration('csky-cdk-assistant')
-			.update('cdkMakePath', selected[0].fsPath, vscode.ConfigurationTarget.Global);
+			.update(
+				'cdkMakePath',
+				normalizePathSeparators(selected[0].fsPath),
+				vscode.ConfigurationTarget.Global,
+			);
 		void vscode.window.showInformationMessage('已保存 cdk-make.exe 路径');
 	});
 }
