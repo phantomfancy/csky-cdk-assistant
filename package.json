@@ -1,0 +1,138 @@
+{
+  "name": "vscode-cdk",
+  "displayName": "vscode-cdk",
+  "description": "C-SKY Development Kit(CDK) build support in VSCode using cdk-make.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/main.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-cdk.configureCdkMake",
+        "title": "CDK: Configure cdk-make Path"
+      },
+      {
+        "command": "vscode-cdk.selectWorkspace",
+        "title": "CDK: Select Workspace"
+      },
+      {
+        "command": "vscode-cdk.selectProject",
+        "title": "CDK: Select Project"
+      },
+      {
+        "command": "vscode-cdk.selectBuildSet",
+        "title": "CDK: Select BuildSet"
+      },
+      {
+        "command": "vscode-cdk.build",
+        "title": "CDK: Build"
+      },
+      {
+        "command": "vscode-cdk.rebuild",
+        "title": "CDK: Rebuild"
+      },
+      {
+        "command": "vscode-cdk.clean",
+        "title": "CDK: Clean"
+      },
+      {
+        "command": "vscode-cdk.buildAll",
+        "title": "CDK: Build All Projects"
+      },
+      {
+        "command": "vscode-cdk.refresh",
+        "title": "CDK: Refresh Projects"
+      },
+      {
+        "command": "vscode-cdk.openConfiguration",
+        "title": "CDK: Open Assistant Configuration"
+      },
+      {
+        "command": "vscode-cdk.doctor",
+        "title": "CDK: Run Doctor"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vscode-cdk.build",
+        "key": "ctrl+alt+b",
+        "mac": "cmd+alt+b"
+      },
+      {
+        "command": "vscode-cdk.rebuild",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r"
+      },
+      {
+        "command": "vscode-cdk.clean",
+        "key": "ctrl+alt+k",
+        "mac": "cmd+alt+k"
+      }
+    ],
+    "configuration": {
+      "title": "VS Code CDK",
+      "properties": {
+        "vscode-cdk.assistantPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Optional path to cdk-make-assistant.exe. The bundled executable is used by default."
+        }
+      }
+    },
+    "taskDefinitions": [
+      {
+        "type": "cdk",
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "build",
+              "rebuild",
+              "clean",
+              "doctor"
+            ]
+          },
+          "folder": {
+            "type": "string"
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run stage-cli && npm run compile",
+    "stage-cli": "node ./scripts/stage-cli.mjs",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.125.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "typescript-eslint": "^8.61.1",
+    "eslint": "^10.5.0",
+    "typescript": "^6.0.3",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  }
+}
