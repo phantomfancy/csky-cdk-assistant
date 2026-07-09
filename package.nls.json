@@ -1,0 +1,14 @@
+{
+    "command.configureCdkMake": "C-SKY CDK: Configure cdk-make Path",
+    "command.selectWorkspace": "C-SKY CDK: Select Workspace",
+    "command.selectProject": "C-SKY CDK: Select Project",
+    "command.selectBuildSet": "C-SKY CDK: Select BuildSet",
+    "command.build": "C-SKY CDK: Build",
+    "command.rebuild": "C-SKY CDK: Rebuild",
+    "command.clean": "C-SKY CDK: Clean",
+    "command.buildAll": "C-SKY CDK: Build All Projects",
+    "command.refresh": "C-SKY CDK: Refresh Projects",
+    "command.openConfiguration": "C-SKY CDK: Open Assistant Configuration",
+    "command.doctor": "C-SKY CDK: Run Doctor",
+    "command.showHelp": "C-SKY CDK: Show Help"
+}

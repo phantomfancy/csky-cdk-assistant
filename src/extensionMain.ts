@@ -51,6 +51,7 @@ export function activate(context: vscode.ExtensionContext): void {
         selectConfiguration(status, 'refresh'));
     register('csky-cdk-assistant.openConfiguration', openConfiguration);
     register('csky-cdk-assistant.doctor', runDoctor);
+    register('csky-cdk-assistant.showHelp', showHelp);
     register('csky-cdk-assistant.build', () => runSelected(status, 'build'));
     register('csky-cdk-assistant.rebuild', () => runSelected(status, 'rebuild'));
     register('csky-cdk-assistant.clean', () => runSelected(status, 'clean'));
@@ -320,6 +321,14 @@ async function openConfiguration(): Promise<void> {
         }
         await vscode.window.showTextDocument(uri);
     });
+}
+
+async function showHelp(): Promise<void> {
+    await vscode.env.openExternal(
+        vscode.Uri.parse(
+            'https://github.com/phantomfancy/csky-cdk-assistant/blob/main/doc/help.md',
+        ),
+    );
 }
 
 async function runDoctor(): Promise<void> {

@@ -1,0 +1,14 @@
+{
+    "command.configureCdkMake": "C-SKY CDK: 配置 cdk-make.exe 路径",
+    "command.selectWorkspace": "C-SKY CDK: 选择 Workspace",
+    "command.selectProject": "C-SKY CDK: 选择项目",
+    "command.selectBuildSet": "C-SKY CDK: 选择 BuildSet",
+    "command.build": "C-SKY CDK: 生成",
+    "command.rebuild": "C-SKY CDK: 重新生成",
+    "command.clean": "C-SKY CDK: 清理",
+    "command.buildAll": "C-SKY CDK: 生成所有项目",
+    "command.refresh": "C-SKY CDK: 刷新项目",
+    "command.openConfiguration": "C-SKY CDK: 打开助手配置",
+    "command.doctor": "C-SKY CDK: 运行诊断",
+    "command.showHelp": "C-SKY CDK: 显示帮助"
+}

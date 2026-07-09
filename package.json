@@ -19,47 +19,51 @@
         "commands": [
             {
                 "command": "csky-cdk-assistant.configureCdkMake",
-                "title": "C-SKY CDK: Configure cdk-make Path"
+                "title": "%command.configureCdkMake%"
             },
             {
                 "command": "csky-cdk-assistant.selectWorkspace",
-                "title": "C-SKY CDK: Select Workspace"
+                "title": "%command.selectWorkspace%"
             },
             {
                 "command": "csky-cdk-assistant.selectProject",
-                "title": "C-SKY CDK: Select Project"
+                "title": "%command.selectProject%"
             },
             {
                 "command": "csky-cdk-assistant.selectBuildSet",
-                "title": "C-SKY CDK: Select BuildSet"
+                "title": "%command.selectBuildSet%"
             },
             {
                 "command": "csky-cdk-assistant.build",
-                "title": "C-SKY CDK: Build"
+                "title": "%command.build%"
             },
             {
                 "command": "csky-cdk-assistant.rebuild",
-                "title": "C-SKY CDK: Rebuild"
+                "title": "%command.rebuild%"
             },
             {
                 "command": "csky-cdk-assistant.clean",
-                "title": "C-SKY CDK: Clean"
+                "title": "%command.clean%"
             },
             {
                 "command": "csky-cdk-assistant.buildAll",
-                "title": "C-SKY CDK: Build All Projects"
+                "title": "%command.buildAll%"
             },
             {
                 "command": "csky-cdk-assistant.refresh",
-                "title": "C-SKY CDK: Refresh Projects"
+                "title": "%command.refresh%"
             },
             {
                 "command": "csky-cdk-assistant.openConfiguration",
-                "title": "C-SKY CDK: Open Assistant Configuration"
+                "title": "%command.openConfiguration%"
             },
             {
                 "command": "csky-cdk-assistant.doctor",
-                "title": "C-SKY CDK: Run Doctor"
+                "title": "%command.doctor%"
+            },
+            {
+                "command": "csky-cdk-assistant.showHelp",
+                "title": "%command.showHelp%"
             }
         ],
         "keybindings": [
