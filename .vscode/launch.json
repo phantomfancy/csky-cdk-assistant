@@ -10,10 +10,19 @@
             "type": "extensionHost",
             "request": "launch",
             "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}"
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--user-data-dir=${workspaceFolder}/.vscode-test/user-data",
+                "--extensions-dir=${workspaceFolder}/.vscode-test/extensions",
+                "--disable-workspace-trust",
+                "--disable-sync"
             ],
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"
+            ],
+            "skipFiles": [
+                "<node_internals>/**",
+                "${workspaceFolder}/node_modules/**",
+                "${workspaceFolder}/.vscode-test/**"
             ],
             "preLaunchTask": "${defaultBuildTask}"
         }
