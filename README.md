@@ -79,13 +79,13 @@ npx --yes --package @vscode/vsce vsce package --allow-missing-repository
 The generated file name follows the package name and version, for example:
 
 ```text
-csky-cdk-assistant-0.0.2.vsix
+csky-cdk-assistant-x.x.x.vsix
 ```
 
 Install the generated VSIX locally:
 
 ```powershell
-code --install-extension ./csky-cdk-assistant-0.0.2.vsix
+code --install-extension ./csky-cdk-assistant-x.x.x.vsix
 ```
 
 If npm cannot write to the default user cache directory on Windows, use a
