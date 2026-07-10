@@ -7,6 +7,13 @@
     "publisher": "phantomfancy",
     "author": "phantomfancy",
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/phantomfancy/csky-cdk-assistant.git"
+    },
+    "bugs": {
+        "url": "https://github.com/phantomfancy/csky-cdk-assistant/issues"
+    },
     "engines": {
         "vscode": "^1.125.0"
     },
