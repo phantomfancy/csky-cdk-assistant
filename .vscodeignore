@@ -1,6 +1,8 @@
 .vscode/**
 .vscode-test/**
+.github/**
 .npm-cache/**
+*.code-workspace
 src/**
 scripts/**
 .gitignore

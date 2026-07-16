@@ -1,0 +1,55 @@
+name: Validate VSIX on Windows
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Test and package on Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Validate package version
+        id: package
+        shell: pwsh
+        run: |
+          $package = Get-Content -Raw package.json | ConvertFrom-Json -AsHashtable
+          $lock = Get-Content -Raw package-lock.json | ConvertFrom-Json -AsHashtable
+          $version = $package['version']
+
+          if (($lock['version'] -ne $version) -or
+              ($lock['packages']['']['version'] -ne $version)) {
+              throw "package.json and package-lock.json versions must match."
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "vsix=csky-cdk-assistant-$version.vsix" >> $env:GITHUB_OUTPUT
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Package VSIX
+        shell: pwsh
+        env:
+          VSIX_NAME: ${{ steps.package.outputs.vsix }}
+        run: npm run package -- --out $env:VSIX_NAME

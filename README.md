@@ -73,7 +73,7 @@ npx oxlint src
 Package the extension as a VSIX:
 
 ```powershell
-npx --yes --package @vscode/vsce vsce package --allow-missing-repository
+npm run package
 ```
 
 The generated file name follows the package name and version, for example:
@@ -93,5 +93,22 @@ workspace-local temporary cache:
 
 ```powershell
 npm ci --cache ./.npm-cache
-npx --yes --package @vscode/vsce vsce package --allow-missing-repository
+npm run package
 ```
+
+## Automated GitHub Releases
+
+The release workflow accepts stable semantic version tags in the `vX.Y.Z`
+format. Before creating a tag, update the version in both `package.json` and
+`package-lock.json`, then commit and merge that version change.
+
+For example:
+
+```powershell
+git tag v0.0.5
+git push origin v0.0.5
+```
+
+The workflow verifies that the tag and package versions match, runs the test
+suite, packages `csky-cdk-assistant-X.Y.Z.vsix`, and creates a GitHub Release
+with automatically generated release notes.

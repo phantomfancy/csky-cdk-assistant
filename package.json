@@ -128,6 +128,7 @@
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
+        "package": "vsce package",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
@@ -143,6 +144,7 @@
         "@types/vscode": "^1.125.0",
         "@vscode/test-cli": "^0.0.15",
         "@vscode/test-electron": "^3.0.0",
+        "@vscode/vsce": "^3.9.2",
         "oxlint": "^1.73.0",
         "typescript": "^7.0.2"
     },
