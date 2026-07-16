@@ -19,21 +19,26 @@ export interface WorkspaceInfo {
 export interface DiscoveryReport {
     root: string;
     workspaces: WorkspaceInfo[];
-    standaloneProjects: ProjectInfo[];
+    issues: DiscoveryIssue[];
+}
+
+export interface DiscoveryIssue {
+    path: string;
+    message: string;
 }
 
 export interface Selection {
-    workspace?: string;
-    projectFile?: string;
+    workspace: string;
     project: string;
     buildConfig: string;
+    cdkMakePath?: string;
 }
 
 export interface ProjectConfig {
     schemaVersion: 1;
-    workspace?: string;
-    projectFile?: string;
+    workspace: string;
     project: string;
     buildConfig: string;
+    cdkMakePath?: string;
 }
 

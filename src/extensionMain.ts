@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import {
     buildArguments,
     discoverProjects,
+    inspectCdkMake,
     resolveCdkMakePath,
 } from './cdk';
 import { normalizePathSeparators } from './pathUtils';
@@ -30,11 +31,13 @@ interface StatusBarControls {
 
 export function activate(context: vscode.ExtensionContext): void {
     const status = createStatusBarControls();
+    const output = vscode.window.createOutputChannel('C-SKY CDK');
     context.subscriptions.push(
         status.selection,
         status.build,
         status.rebuild,
         status.clean,
+        output,
     );
     const register = (id: string, handler: () => unknown): void => {
         context.subscriptions.push(vscode.commands.registerCommand(id, handler));
@@ -50,7 +53,7 @@ export function activate(context: vscode.ExtensionContext): void {
     register('csky-cdk-assistant.refresh', () =>
         selectConfiguration(status, 'refresh'));
     register('csky-cdk-assistant.openConfiguration', openConfiguration);
-    register('csky-cdk-assistant.doctor', runDoctor);
+    register('csky-cdk-assistant.doctor', () => runDoctor(output));
     register('csky-cdk-assistant.showHelp', showHelp);
     register('csky-cdk-assistant.build', () => runSelected(status, 'build'));
     register('csky-cdk-assistant.rebuild', () => runSelected(status, 'rebuild'));
@@ -66,7 +69,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void { }
 
-class CdkTaskProvider implements vscode.TaskProvider {
+export class CdkTaskProvider implements vscode.TaskProvider {
     public async provideTasks(): Promise<vscode.Task[]> {
         const tasks: vscode.Task[] = [];
         for (const folder of vscode.workspace.workspaceFolders ?? []) {
@@ -82,13 +85,33 @@ class CdkTaskProvider implements vscode.TaskProvider {
         return tasks;
     }
 
-    public resolveTask(): undefined {
-        return undefined;
+    public async resolveTask(task: vscode.Task): Promise<vscode.Task | undefined> {
+        const action = task.definition.action;
+        if (!isBuildAction(action)) {
+            return undefined;
+        }
+        const folder = taskFolder(task);
+        if (!folder) {
+            return undefined;
+        }
+        const selection = await loadSelection(folder);
+        return selection ? createTask(folder, selection, action) : undefined;
     }
 }
 
 async function configureCdkMake(): Promise<void> {
     await showErrors(async () => {
+        const folder = await chooseFolder();
+        if (!folder) {
+            return;
+        }
+        let selection = await loadSelection(folder);
+        if (!selection) {
+            selection = await chooseSelection(folder);
+            if (!selection) {
+                return;
+            }
+        }
         const selected = await vscode.window.showOpenDialog({
             canSelectFiles: true,
             canSelectFolders: false,
@@ -99,14 +122,12 @@ async function configureCdkMake(): Promise<void> {
         if (!selected?.[0]) {
             return;
         }
-        await vscode.workspace
-            .getConfiguration('csky-cdk-assistant')
-            .update(
-                'cdkMakePath',
-                normalizePathSeparators(selected[0].fsPath),
-                vscode.ConfigurationTarget.Global,
-            );
-        void vscode.window.showInformationMessage('已保存 cdk-make.exe 路径');
+        selection.cdkMakePath = normalizePathSeparators(selected[0].fsPath);
+        resolveCdkMakePath(selection);
+        await saveSelection(folder, selection);
+        void vscode.window.showInformationMessage(
+            `已保存 cdk-make.exe 路径到 ${projectConfigUri(folder, selection).fsPath}`,
+        );
     });
 }
 
@@ -149,6 +170,11 @@ async function selectConfiguration(
             },
             () => discoverProjects(folder),
         );
+        if (report.issues.length > 0) {
+            void vscode.window.showWarningMessage(
+                `C-SKY CDK: 扫描时发现 ${report.issues.length} 个配置问题，可运行 Doctor 查看详情。`,
+            );
+        }
         const current = await loadSelection(folder);
         const selection = await chooseFromReport(
             report,
@@ -196,28 +222,26 @@ async function chooseFromReport(
             return undefined;
         }
         const buildConfig = await pickBuildConfig(project, current, mode);
-        return buildConfig
-            ? { workspace: workspace.path, project: project.name, buildConfig }
-            : undefined;
+        if (!buildConfig) {
+            return undefined;
+        }
+        const sameWorkspace = current &&
+            normalizePathSeparators(current.workspace).toLowerCase() ===
+            workspace.path.toLowerCase();
+        return {
+            workspace: workspace.path,
+            project: project.name,
+            buildConfig,
+            ...(sameWorkspace && current.cdkMakePath
+                ? { cdkMakePath: current.cdkMakePath }
+                : {}),
+        };
     }
 
-    let project = report.standaloneProjects.find(
-        (item) => item.path === current?.projectFile,
-    );
-    if (!project || mode !== 'buildConfig') {
-        project = await pickItem(
-            report.standaloneProjects,
-            '选择 CDK 项目',
-            (item) => item.path,
-        );
-    }
-    if (!project) {
-        throw new Error('当前目录中没有找到 .cdkws 或 .cdkproj');
-    }
-    const buildConfig = await pickBuildConfig(project, current, mode);
-    return buildConfig
-        ? { projectFile: project.path, project: project.name, buildConfig }
-        : undefined;
+    const issueSummary = report.issues.length > 0
+        ? `，并发现 ${report.issues.length} 个无效配置`
+        : '';
+    throw new Error(`当前目录中没有找到可用的 .cdkws${issueSummary}`);
 }
 
 async function pickProject(
@@ -237,6 +261,9 @@ async function pickBuildConfig(
     current: Selection | undefined,
     mode: SelectionMode,
 ): Promise<string | undefined> {
+    if (project.buildConfigs.length === 0) {
+        throw new Error(`项目 ${project.name} 没有可用的 BuildSet`);
+    }
     if (
         mode !== 'buildConfig' &&
         current?.project === project.name &&
@@ -291,10 +318,11 @@ function createTask(
         `C-SKY CDK ${action}${all ? ' all' : ''}`,
         'csky-cdk',
         new vscode.ProcessExecution(
-            resolveCdkMakePath(),
+            resolveCdkMakePath(selection),
             buildArguments(selection, action, all),
+            { cwd: folder.uri.fsPath },
         ),
-        [],
+        cdkProblemMatchers(folder),
     );
     if (action === 'build' && !all) {
         task.group = vscode.TaskGroup.Build;
@@ -313,11 +341,20 @@ async function openConfiguration(): Promise<void> {
         if (!folder) {
             return;
         }
-        const uri = projectConfigUri(folder);
+        const selection = await loadSelection(folder);
+        if (!selection) {
+            throw new Error('项目尚未配置，请先运行 “C-SKY CDK: Select Project”');
+        }
+        let uri = projectConfigUri(folder, selection);
         try {
             await vscode.workspace.fs.stat(uri);
         } catch {
-            throw new Error('项目尚未配置，请先运行 “C-SKY CDK: Select Project”');
+            const legacyUri = projectConfigUri(folder);
+            if (legacyUri.fsPath === uri.fsPath) {
+                throw new Error('项目配置文件不存在，请重新选择项目');
+            }
+            await vscode.workspace.fs.stat(legacyUri);
+            uri = legacyUri;
         }
         await vscode.window.showTextDocument(uri);
     });
@@ -331,23 +368,66 @@ async function showHelp(): Promise<void> {
     );
 }
 
-async function runDoctor(): Promise<void> {
+async function runDoctor(output: vscode.OutputChannel): Promise<void> {
     await showErrors(async () => {
         const folder = await chooseFolder();
         if (!folder) {
             return;
         }
-        const executable = resolveCdkMakePath();
+        const selection = await loadSelection(folder);
+        const executable = resolveCdkMakePath(selection);
+        const executableInfo = inspectCdkMake(executable);
         const report = await discoverProjects(folder);
         const projects = report.workspaces.reduce(
             (total, workspace) => total + workspace.projects.length,
-            report.standaloneProjects.length,
+            0,
         );
+        output.clear();
+        output.appendLine('C-SKY CDK Doctor');
+        output.appendLine(`workspace folder: ${normalizePathSeparators(folder.uri.fsPath)}`);
+        output.appendLine(`cdk-make: ${executable}`);
+        output.appendLine(`size: ${executableInfo.size} bytes`);
+        output.appendLine(`modified: ${executableInfo.modified.toISOString()}`);
+        output.appendLine(
+            `discovered: ${report.workspaces.length} Workspace, ${projects} Project`,
+        );
+        if (report.issues.length > 0) {
+            output.appendLine(`discovery issues: ${report.issues.length}`);
+            for (const issue of report.issues) {
+                output.appendLine(`- ${issue.path}: ${issue.message}`);
+            }
+            output.show(true);
+            void vscode.window.showWarningMessage(
+                `C-SKY CDK: 发现 ${report.issues.length} 个项目配置问题，详见输出。`,
+            );
+            return;
+        }
+        output.appendLine('result: OK');
         void vscode.window.showInformationMessage(
-            `C-SKY CDK OK: ${executable}; ` +
-            `${report.workspaces.length} Workspace，${projects} Project`,
+            `C-SKY CDK OK: ${report.workspaces.length} Workspace，${projects} Project`,
         );
     });
+}
+
+function isBuildAction(value: unknown): value is BuildAction {
+    return value === 'build' || value === 'rebuild' || value === 'clean';
+}
+
+function taskFolder(task: vscode.Task): vscode.WorkspaceFolder | undefined {
+    if (typeof task.scope === 'object' && task.scope !== null && 'uri' in task.scope) {
+        return task.scope;
+    }
+    const name = task.definition.folder;
+    return typeof name === 'string'
+        ? vscode.workspace.workspaceFolders?.find((folder) => folder.name === name)
+        : undefined;
+}
+
+function cdkProblemMatchers(folder: vscode.WorkspaceFolder): string[] {
+    const configured = vscode.workspace
+        .getConfiguration('csky-cdk-assistant', folder.uri)
+        .get<string[]>('problemMatchers');
+    return configured ?? ['$gcc'];
 }
 
 function createStatusBarControls(): StatusBarControls {

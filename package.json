@@ -14,6 +14,7 @@
     "bugs": {
         "url": "https://github.com/phantomfancy/csky-cdk-assistant/issues"
     },
+    "homepage": "https://github.com/phantomfancy/csky-cdk-assistant#readme",
     "engines": {
         "vscode": "^1.125.0"
     },
@@ -99,7 +100,24 @@
                     "type": "string",
                     "default": "",
                     "scope": "machine",
-                    "description": "Path to cdk-make.exe. The standard C-SKY CDK installation path is used when empty."
+                    "description": "Global default path to cdk-make.exe. A cdkMakePath in the current .cdkws project's .vscode/csky-cdk.json overrides this value."
+                },
+                "csky-cdk-assistant.discoveryExclude": {
+                    "type": "string",
+                    "default": "**/{.git,node_modules,target,dist,out}/**",
+                    "scope": "window",
+                    "description": "Glob used to exclude directories while recursively discovering .cdkws files."
+                },
+                "csky-cdk-assistant.problemMatchers": {
+                    "type": "array",
+                    "default": [
+                        "$gcc"
+                    ],
+                    "scope": "window",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "VS Code problem matchers applied to CDK build tasks. Set to an empty array when the toolchain does not emit GCC-compatible diagnostics."
                 }
             }
         },
@@ -115,8 +133,7 @@
                         "enum": [
                             "build",
                             "rebuild",
-                            "clean",
-                            "doctor"
+                            "clean"
                         ]
                     },
                     "folder": {

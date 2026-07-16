@@ -2,7 +2,12 @@ import * as assert from 'assert';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { buildArguments, discoverProjects, parseProjectXml } from '../cdk';
+import {
+    buildArguments,
+    discoverProjects,
+    parseProjectXml,
+    resolveCdkMakePath,
+} from '../cdk';
 
 suite('C-SKY CDK XML parser', () => {
     test('parses project metadata and BuildSets', () => {
@@ -82,6 +87,94 @@ suite('C-SKY CDK XML parser', () => {
                 'rebuild',
             ],
         );
+    });
+
+    test('maps Build All to the workspace argument', () => {
+        assert.deepStrictEqual(
+            buildArguments({
+                workspace: String.raw`C:\work\test.cdkws`,
+                project: 'app',
+                buildConfig: 'BuildSet',
+            }, 'build', true),
+            ['-w', 'C:/work/test.cdkws', '-a', '-d', 'build'],
+        );
+    });
+
+    test('uses the project cdk-make path before the global setting', async () => {
+        const root = vscode.Uri.file(path.join(
+            os.tmpdir(),
+            `csky-cdk-assistant-cdk-path-${process.pid}-${Date.now()}`,
+        ));
+        const executable = vscode.Uri.joinPath(root, 'tools', 'cdk-make.exe');
+        try {
+            await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(root, 'tools'));
+            await vscode.workspace.fs.writeFile(executable, new Uint8Array());
+
+            assert.strictEqual(
+                resolveCdkMakePath({
+                    workspace: vscode.Uri.joinPath(root, 'test.cdkws').fsPath,
+                    project: 'app',
+                    buildConfig: 'BuildSet',
+                    cdkMakePath: 'tools/cdk-make.exe',
+                }),
+                executable.fsPath.replace(/\\/g, '/'),
+            );
+        } finally {
+            await vscode.workspace.fs.delete(root, { recursive: true, useTrash: false });
+        }
+    });
+
+    test('keeps valid projects when another project cannot be parsed', async () => {
+        const root = vscode.Uri.file(path.join(
+            os.tmpdir(),
+            `csky-cdk-assistant-invalid-project-${process.pid}-${Date.now()}`,
+        ));
+        try {
+            await vscode.workspace.fs.createDirectory(root);
+            await writeText(vscode.Uri.joinPath(root, 'test.cdkws'), `
+<CDK_Workspace Name="test">
+    <Project Name="valid" Path="valid.cdkproj"/>
+    <Project Name="invalid" Path="invalid.cdkproj"/>
+</CDK_Workspace>`);
+            await writeText(vscode.Uri.joinPath(root, 'valid.cdkproj'), `
+<Project Name="valid"><BuildConfigs><BuildConfig Name="BuildSet"/>
+</BuildConfigs></Project>`);
+            await writeText(vscode.Uri.joinPath(root, 'invalid.cdkproj'), '<Project>');
+
+            const report = await discoverProjects({
+                uri: root,
+                name: 'invalid_project_fixture',
+                index: 0,
+            });
+
+            assert.deepStrictEqual(
+                report.workspaces[0].projects.map((project) => project.name),
+                ['valid'],
+            );
+            assert.strictEqual(report.issues.length, 1);
+            assert.match(report.issues[0].path, /invalid\.cdkproj$/);
+        } finally {
+            await vscode.workspace.fs.delete(root, { recursive: true, useTrash: false });
+        }
+    });
+
+    test('reports a malformed workspace without hiding valid workspaces', async () => {
+        const root = await createWorkspaceFixture();
+        try {
+            await writeText(vscode.Uri.joinPath(root, 'invalid.cdkws'), '<CDK_Workspace>');
+
+            const report = await discoverProjects({
+                uri: root,
+                name: 'invalid_workspace_fixture',
+                index: 0,
+            });
+
+            assert.strictEqual(report.workspaces.length, 1);
+            assert.strictEqual(report.issues.length, 1);
+            assert.match(report.issues[0].path, /invalid\.cdkws$/);
+        } finally {
+            await vscode.workspace.fs.delete(root, { recursive: true, useTrash: false });
+        }
     });
 });
 

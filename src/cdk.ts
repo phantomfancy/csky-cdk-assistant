@@ -5,6 +5,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { normalizePathSeparators } from './pathUtils';
 import {
     BuildAction,
+    DiscoveryIssue,
     DiscoveryReport,
     ProjectInfo,
     Selection,
@@ -12,7 +13,7 @@ import {
 } from './types';
 
 const defaultCdkMakePath = 'C:/Program Files/C-Sky/CDK/cdk-make.exe';
-const excludePattern = '**/{.git,node_modules,target,dist,out}/**';
+const defaultExcludePattern = '**/{.git,node_modules,target,dist,out}/**';
 const xmlParser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: '@_',
@@ -22,40 +23,75 @@ const xmlParser = new XMLParser({
 
 type XmlObject = Record<string, unknown>;
 
-export function resolveCdkMakePath(): string {
+export function resolveCdkMakePath(selection?: Selection): string {
     const configured = vscode.workspace
         .getConfiguration('csky-cdk-assistant')
         .get<string>('cdkMakePath')
         ?.trim();
-    const executable = normalizePathSeparators(configured || defaultCdkMakePath);
-    if (!fs.existsSync(executable)) {
+    const selected = selection?.cdkMakePath?.trim();
+    const executable = normalizePathSeparators(
+        selected && selection && !path.isAbsolute(selected)
+            ? path.resolve(path.dirname(selection.workspace), selected)
+            : selected || configured || defaultCdkMakePath,
+    );
+    let stat: fs.Stats;
+    try {
+        stat = fs.statSync(executable);
+    } catch {
         throw new Error(
-            `找不到 cdk-make.exe: ${executable}。请设置 csky-cdk-assistant.cdkMakePath`,
+            `找不到 cdk-make.exe: ${executable}。请设置项目 csky-cdk.json 或全局 csky-cdk-assistant.cdkMakePath`,
         );
     }
+    if (!stat.isFile()) {
+        throw new Error(`cdk-make.exe 不是文件: ${executable}`);
+    }
     return executable;
+}
+
+export function inspectCdkMake(executable: string): {
+    size: number;
+    modified: Date;
+} {
+    const stat = fs.statSync(executable);
+    if (!stat.isFile()) {
+        throw new Error(`cdk-make.exe 不是文件: ${executable}`);
+    }
+    return { size: stat.size, modified: stat.mtime };
 }
 
 export async function discoverProjects(
     folder: vscode.WorkspaceFolder,
 ): Promise<DiscoveryReport> {
+    const issues: DiscoveryIssue[] = [];
     const workspaceUris = await discoverByExtension(folder, 'cdkws');
-    const workspaces = await Promise.all(workspaceUris.map(parseWorkspaceFile));
-    workspaces.sort((left, right) => left.path.localeCompare(right.path));
-
-    let standaloneProjects: ProjectInfo[] = [];
-    if (workspaces.length === 0) {
-        const projectUris = await discoverByExtension(folder, 'cdkproj');
-        standaloneProjects = await Promise.all(
-            projectUris.map((uri) => parseProjectFile(uri)),
-        );
-        standaloneProjects.sort((left, right) => left.path.localeCompare(right.path));
+    const workspaceResults = await Promise.all(workspaceUris.map(async (uri): Promise<{
+        workspace?: WorkspaceInfo;
+        issues: DiscoveryIssue[];
+    }> => {
+        try {
+            return await parseWorkspaceFile(uri);
+        } catch (error) {
+            return {
+                issues: [{
+                    path: normalizePathSeparators(uri.fsPath),
+                    message: errorMessage(error),
+                }],
+            };
+        }
+    }));
+    const workspaces: WorkspaceInfo[] = [];
+    for (const result of workspaceResults) {
+        issues.push(...result.issues);
+        if (result.workspace) {
+            workspaces.push(result.workspace);
+        }
     }
+    workspaces.sort((left, right) => left.path.localeCompare(right.path));
 
     return {
         root: normalizePathSeparators(folder.uri.fsPath),
         workspaces,
-        standaloneProjects,
+        issues,
     };
 }
 
@@ -93,48 +129,62 @@ export function buildArguments(
     action: BuildAction,
     all = false,
 ): string[] {
-    const args: string[] = [];
-    if (selection.workspace) {
-        args.push('-w', normalizePathSeparators(selection.workspace));
-        if (all) {
-            args.push('-a');
-        } else {
-            args.push('-p', selection.project, '-c', selection.buildConfig);
-        }
-    } else if (selection.projectFile) {
-        if (all) {
-            throw new Error('直接 .cdkproj 模式不支持 Build All');
-        }
-        args.push('-p', normalizePathSeparators(selection.projectFile), '-c', selection.buildConfig);
+    const args = ['-w', normalizePathSeparators(selection.workspace)];
+    if (all) {
+        args.push('-a');
     } else {
-        throw new Error('缺少 Workspace 或 Project 文件配置');
+        args.push('-p', selection.project, '-c', selection.buildConfig);
     }
     args.push('-d', action);
     return args;
 }
 
-async function parseWorkspaceFile(uri: vscode.Uri): Promise<WorkspaceInfo> {
+async function parseWorkspaceFile(uri: vscode.Uri): Promise<{
+    workspace: WorkspaceInfo;
+    issues: DiscoveryIssue[];
+}> {
     const document = object(xmlParser.parse(await readText(uri)), 'XML document');
     const workspace = object(document.CDK_Workspace, 'CDK_Workspace');
     const projectNodes = values(workspace.Project).map((value) =>
         object(value, 'Project'));
     const defaults = workspaceDefaults(workspace);
-    const projects = await Promise.all(projectNodes.map(async (projectNode) => {
-        const name = attribute(projectNode, 'Name');
-        const relativePath = attribute(projectNode, 'Path');
-        const projectPath = path.resolve(path.dirname(uri.fsPath), relativePath);
-        return parseProjectFile(vscode.Uri.file(projectPath), defaults.get(name));
+    const projectResults = await Promise.all(projectNodes.map(async (projectNode) => {
+        let projectPath: string | undefined;
+        try {
+            const name = attribute(projectNode, 'Name');
+            const relativePath = attribute(projectNode, 'Path');
+            projectPath = path.resolve(path.dirname(uri.fsPath), relativePath);
+            return {
+                project: await parseProjectFile(
+                    vscode.Uri.file(projectPath),
+                    defaults.get(name),
+                ),
+            };
+        } catch (error) {
+            return {
+                issue: {
+                    path: normalizePathSeparators(projectPath ?? uri.fsPath),
+                    message: errorMessage(error),
+                },
+            };
+        }
     }));
+    const projects = projectResults.flatMap((result) =>
+        result.project ? [result.project] : []);
     const activeProject = projectNodes
         .find((project) => optionalAttribute(project, 'Active')?.toLowerCase() === 'yes');
 
     return {
-        name: attribute(workspace, 'Name'),
-        path: normalizePathSeparators(uri.fsPath),
-        activeProject: activeProject
-            ? attribute(activeProject, 'Name')
-            : undefined,
-        projects,
+        workspace: {
+            name: attribute(workspace, 'Name'),
+            path: normalizePathSeparators(uri.fsPath),
+            activeProject: activeProject
+                ? attribute(activeProject, 'Name')
+                : undefined,
+            projects,
+        },
+        issues: projectResults.flatMap((result) =>
+            result.issue ? [result.issue] : []),
     };
 }
 
@@ -178,7 +228,7 @@ function workspaceDefaults(workspace: XmlObject): Map<string, string> {
 
 async function discoverByExtension(
     folder: vscode.WorkspaceFolder,
-    extension: 'cdkws' | 'cdkproj',
+    extension: 'cdkws',
 ): Promise<vscode.Uri[]> {
     const entries = await vscode.workspace.fs.readDirectory(folder.uri);
     const immediate = entries
@@ -194,12 +244,20 @@ async function discoverByExtension(
     }
     const found = await vscode.workspace.findFiles(
         new vscode.RelativePattern(folder, `**/*.${extension}`),
-        excludePattern,
+        discoveryExcludePattern(folder),
     );
     return found.sort((left, right) =>
         normalizePathSeparators(left.fsPath).localeCompare(
             normalizePathSeparators(right.fsPath),
         ));
+}
+
+function discoveryExcludePattern(folder: vscode.WorkspaceFolder): string {
+    const configured = vscode.workspace
+        .getConfiguration('csky-cdk-assistant', folder.uri)
+        .get<string>('discoveryExclude')
+        ?.trim();
+    return configured || defaultExcludePattern;
 }
 
 async function readText(uri: vscode.Uri): Promise<string> {
