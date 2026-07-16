@@ -1,114 +1,44 @@
-# csky-cdk-assistant
+# C-SKY CDK Assistant
 
-Discover and build C-SKY CDK workspaces and projects directly from VS Code.
+[English](README.md),   [简体中文](README.zh-CN.md)
+
+Build C-SKY Development Kit (CDK) workspaces directly from Visual Studio Code through the official `cdk-make.exe` command-line tool.
+
+The extension discovers CDK metadata itself. It does not modify `.cdkws` or `.cdkproj` files and does not require a companion CLI.
 
 ## Features
 
-- Discover `.cdkws` and `.cdkproj` files.
-- Select Workspace, Project, and BuildSet with Quick Pick.
-- Build, rebuild, clean, or build all projects using VS Code Tasks.
-- Show the active project and BuildSet in the status bar.
-- Store project selection in `.vscode/csky-cdk.json`.
+- Discover `.cdkws` workspaces and their `.cdkproj` projects.
+- Select a Workspace, Project, and BuildSet with Quick Pick.
+- Build, rebuild, clean, or build every project through VS Code Tasks.
+- Show the selected project and BuildSet with build shortcuts in the status bar.
+- Store the selection in `.vscode/csky-cdk.json` with workspace-relative paths.
+- Diagnose the `cdk-make.exe` path and discovered project count.
+- Provide English and Simplified Chinese command titles.
 
-## Requirements
+## Requirements and Scope
 
-The first release supports local Windows workspaces and requires
-`cdk-make.exe`. Run `C-SKY CDK: Configure cdk-make Path` once, then run
-`C-SKY CDK: Select Project`.
+- Windows desktop VS Code `1.125.0` or newer.
+- A local C-SKY CDK installation that provides `cdk-make.exe`.
+- A folder containing a `.cdkws` file.
 
-## Keyboard Shortcuts
+## Quick Start
 
-- `Ctrl+F7`: Build
-- `Ctrl+Shift+F7`: Rebuild
-- `Alt+F7`: Clean
+1. Open the folder containing the CDK workspace in VS Code.
+2. Run **C-SKY CDK: Select Workspace** and select the Workspace, Project, and BuildSet.
+3. Run **C-SKY CDK: Configure cdk-make Path** if CDK is not installed at the default location.
+4. Use the status bar buttons, Command Palette commands, or keyboard shortcuts to build.
 
-Open **Preferences: Open Keyboard Shortcuts** and search for `C-SKY CDK` to
-override these bindings. `Ctrl+Shift+B` can also open the registered C-SKY CDK
-build task.
-
-## Extension Settings
-
-`csky-cdk-assistant.cdkMakePath` optionally overrides the standard
-`C:/Program Files/C-Sky/CDK/cdk-make.exe` path.
-
-The selected Workspace, Project, and BuildSet are stored in
-`.vscode/csky-cdk.json` below the VS Code workspace folder.
-
-## Known Issues
-
-VS Code Web, WSL, Remote SSH, flashing, and debugging are not supported.
-
-## Release Notes
-
-### 0.0.1
-
-- Direct CDK workspace and project discovery without a companion CLI.
-- Direct `cdk-make.exe` task execution.
-- Command Palette actions for build, rebuild, clean, and project selection.
-- Default Build, Rebuild, and Clean keyboard shortcuts.
-
-## Build and Package
-
-Install dependencies from the lock file:
-
-```powershell
-npm ci
-```
-
-Compile the extension with TypeScript:
-
-```powershell
-npx tsc -p ./
-```
-
-`tsc` prints output only when there are errors. A successful build generates
-JavaScript files under `out/`, including `out/extensionMain.js`.
-
-Run lint if needed:
-
-```powershell
-npx oxlint src
-```
-
-Package the extension as a VSIX:
-
-```powershell
-npm run package
-```
-
-The generated file name follows the package name and version, for example:
+The default executable path is:
 
 ```text
-csky-cdk-assistant-x.x.x.vsix
+C:/Program Files/C-Sky/CDK/cdk-make.exe
 ```
 
-Install the generated VSIX locally:
+## VS Code Tasks
 
-```powershell
-code --install-extension ./csky-cdk-assistant-x.x.x.vsix
-```
+The extension contributes the `csky-cdk` task type and provides build, rebuild, and clean tasks for each configured VS Code workspace folder. Tasks declared in `tasks.json` are resolved against the saved project selection. Build commands execute `cdk-make.exe` in the selected workspace folder with its native short options such as `-w`, `-p`, `-c`, `-d`, and `-a`.
 
-If npm cannot write to the default user cache directory on Windows, use a
-workspace-local temporary cache:
+Development instructions and known issues are documented in [doc/development.md](doc/development.md).
 
-```powershell
-npm ci --cache ./.npm-cache
-npm run package
-```
-
-## Automated GitHub Releases
-
-The release workflow accepts stable semantic version tags in the `vX.Y.Z`
-format. Before creating a tag, update the version in both `package.json` and
-`package-lock.json`, then commit and merge that version change.
-
-For example:
-
-```powershell
-git tag v0.0.5
-git push origin v0.0.5
-```
-
-The workflow verifies that the tag and package versions match, runs the test
-suite, packages `csky-cdk-assistant-X.Y.Z.vsix`, and creates a GitHub Release
-with automatically generated release notes.
+See [CHANGELOG.md](CHANGELOG.md) for release history and [doc/help.md](doc/help.md) for bilingual usage help.
