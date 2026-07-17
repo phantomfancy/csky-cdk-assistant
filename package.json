@@ -144,16 +144,16 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
+        "vscode:prepublish": "npm run compile:production",
         "package": "vsce package",
-        "compile": "tsc -p ./",
+        "compile": "tsc -p ./ && npm run bundle",
+        "compile:production": "tsc -p ./ && npm run bundle:production",
+        "bundle": "esbuild src/extensionMain.ts --bundle --platform=node --format=cjs --target=es2022 --external:vscode --sourcemap --outfile=out/extensionMain.js",
+        "bundle:production": "esbuild src/extensionMain.ts --bundle --platform=node --format=cjs --target=es2022 --external:vscode --minify --outfile=out/extensionMain.js",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "oxlint src",
         "test": "vscode-test"
-    },
-    "dependencies": {
-        "fast-xml-parser": "^5.9.3"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.10",
@@ -162,6 +162,8 @@
         "@vscode/test-cli": "^0.0.15",
         "@vscode/test-electron": "^3.0.0",
         "@vscode/vsce": "^3.9.2",
+        "esbuild": "^0.28.1",
+        "fast-xml-parser": "^5.9.3",
         "oxlint": "^1.73.0",
         "typescript": "^7.0.2"
     },

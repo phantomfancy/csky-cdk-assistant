@@ -14,13 +14,11 @@ suite('Extension Test Suite', () => {
         await extension.activate();
 
         const commands = await vscode.commands.getCommands(true);
-        for (const command of [
-            'csky-cdk-assistant.build',
-            'csky-cdk-assistant.configureCdkMake',
-            'csky-cdk-assistant.doctor',
-            'csky-cdk-assistant.selectWorkspace',
-        ]) {
-            assert.ok(commands.includes(command), `${command} was not registered`);
+        for (const command of extension.packageJSON.contributes.commands) {
+            assert.ok(
+                commands.includes(command.command),
+                `${command.command} was not registered`,
+            );
         }
     });
 

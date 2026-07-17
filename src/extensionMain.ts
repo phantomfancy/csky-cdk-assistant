@@ -5,7 +5,7 @@ import {
     inspectCdkMake,
     resolveCdkMakePath,
 } from './cdk';
-import { normalizePathSeparators } from './pathUtils';
+import { errorMessage, normalizePathSeparators } from './pathUtils';
 import {
     loadSelection,
     projectConfigUri,
@@ -22,43 +22,45 @@ import {
 
 type SelectionMode = 'workspace' | 'project' | 'buildConfig' | 'refresh';
 
+const commandPrefix = 'csky-cdk-assistant';
+const buildCommands: readonly [BuildAction, string, string, number][] = [
+    ['build', '$(play)', 'C-SKY CDK: 生成当前项目', 99],
+    ['rebuild', '$(sync)', 'C-SKY CDK: 重新生成当前项目', 98],
+    ['clean', '$(trash)', 'C-SKY CDK: 清理当前项目', 97],
+];
+const selectionCommands: readonly [string, SelectionMode][] = [
+    ['selectWorkspace', 'workspace'],
+    ['selectProject', 'project'],
+    ['selectBuildSet', 'buildConfig'],
+    ['refresh', 'refresh'],
+];
+
 interface StatusBarControls {
     selection: vscode.StatusBarItem;
-    build: vscode.StatusBarItem;
-    rebuild: vscode.StatusBarItem;
-    clean: vscode.StatusBarItem;
+    actions: vscode.StatusBarItem[];
 }
 
 export function activate(context: vscode.ExtensionContext): void {
     const status = createStatusBarControls();
     const output = vscode.window.createOutputChannel('C-SKY CDK');
-    context.subscriptions.push(
-        status.selection,
-        status.build,
-        status.rebuild,
-        status.clean,
-        output,
-    );
+    context.subscriptions.push(status.selection, ...status.actions, output);
     const register = (id: string, handler: () => unknown): void => {
-        context.subscriptions.push(vscode.commands.registerCommand(id, handler));
+        context.subscriptions.push(
+            vscode.commands.registerCommand(commandId(id), handler),
+        );
     };
 
-    register('csky-cdk-assistant.configureCdkMake', configureCdkMake);
-    register('csky-cdk-assistant.selectWorkspace', () =>
-        selectConfiguration(status, 'workspace'));
-    register('csky-cdk-assistant.selectProject', () =>
-        selectConfiguration(status, 'project'));
-    register('csky-cdk-assistant.selectBuildSet', () =>
-        selectConfiguration(status, 'buildConfig'));
-    register('csky-cdk-assistant.refresh', () =>
-        selectConfiguration(status, 'refresh'));
-    register('csky-cdk-assistant.openConfiguration', openConfiguration);
-    register('csky-cdk-assistant.doctor', () => runDoctor(output));
-    register('csky-cdk-assistant.showHelp', showHelp);
-    register('csky-cdk-assistant.build', () => runSelected(status, 'build'));
-    register('csky-cdk-assistant.rebuild', () => runSelected(status, 'rebuild'));
-    register('csky-cdk-assistant.clean', () => runSelected(status, 'clean'));
-    register('csky-cdk-assistant.buildAll', () =>
+    register('configureCdkMake', configureCdkMake);
+    for (const [command, mode] of selectionCommands) {
+        register(command, () => selectConfiguration(status, mode));
+    }
+    register('openConfiguration', openConfiguration);
+    register('doctor', () => runDoctor(output));
+    register('showHelp', showHelp);
+    for (const [action] of buildCommands) {
+        register(action, () => runSelected(status, action));
+    }
+    register('buildAll', () =>
         runSelected(status, 'build', true));
 
     context.subscriptions.push(
@@ -75,11 +77,8 @@ export class CdkTaskProvider implements vscode.TaskProvider {
         for (const folder of vscode.workspace.workspaceFolders ?? []) {
             const selection = await loadSelection(folder);
             if (selection) {
-                tasks.push(
-                    createTask(folder, selection, 'build'),
-                    createTask(folder, selection, 'rebuild'),
-                    createTask(folder, selection, 'clean'),
-                );
+                tasks.push(...buildCommands.map(([action]) =>
+                    createTask(folder, selection, action)));
             }
         }
         return tasks;
@@ -186,7 +185,7 @@ async function selectConfiguration(
                 await saveSelection(folder, selection);
             }
             updateStatus(status.selection, selection);
-            showActionButtons(status);
+            setActionButtonsVisible(status, true);
         }
     });
 }
@@ -435,29 +434,18 @@ function createStatusBarControls(): StatusBarControls {
         vscode.StatusBarAlignment.Left,
         100,
     );
-    selection.command = 'csky-cdk-assistant.selectWorkspace';
+    selection.command = commandId('selectWorkspace');
     selection.tooltip = '选择 C-SKY CDK 项目和 BuildSet';
 
-    const build = createActionStatusBarItem(
-        '$(play)',
-        'csky-cdk-assistant.build',
-        'C-SKY CDK: 生成当前项目',
-        99,
-    );
-    const rebuild = createActionStatusBarItem(
-        '$(sync)',
-        'csky-cdk-assistant.rebuild',
-        'C-SKY CDK: 重新生成当前项目',
-        98,
-    );
-    const clean = createActionStatusBarItem(
-        '$(trash)',
-        'csky-cdk-assistant.clean',
-        'C-SKY CDK: 清理当前项目',
-        97,
-    );
+    const actions = buildCommands.map(([command, text, tooltip, priority]) =>
+        createActionStatusBarItem(
+            text,
+            commandId(command),
+            tooltip,
+            priority,
+        ));
 
-    return { selection, build, rebuild, clean };
+    return { selection, actions };
 }
 
 function createActionStatusBarItem(
@@ -480,10 +468,10 @@ async function refreshStatus(status: StatusBarControls): Promise<void> {
     const folder = vscode.workspace.workspaceFolders?.[0];
     if (!folder) {
         status.selection.hide();
-        hideActionButtons(status);
+        setActionButtonsVisible(status, false);
         return;
     }
-    showActionButtons(status);
+    setActionButtonsVisible(status, true);
     try {
         const selection = await loadSelection(folder);
         if (selection) {
@@ -491,7 +479,7 @@ async function refreshStatus(status: StatusBarControls): Promise<void> {
             return;
         }
     } catch (error) {
-        status.selection.tooltip = error instanceof Error ? error.message : String(error);
+        status.selection.tooltip = errorMessage(error);
     }
     status.selection.text = '$(tools) C-SKY CDK: 选择项目';
     status.selection.show();
@@ -502,24 +490,27 @@ function updateStatus(status: vscode.StatusBarItem, selection: Selection): void 
     status.show();
 }
 
-function showActionButtons(status: StatusBarControls): void {
-    status.build.show();
-    status.rebuild.show();
-    status.clean.show();
-}
-
-function hideActionButtons(status: StatusBarControls): void {
-    status.build.hide();
-    status.rebuild.hide();
-    status.clean.hide();
+function setActionButtonsVisible(
+    status: StatusBarControls,
+    visible: boolean,
+): void {
+    for (const item of status.actions) {
+        if (visible) {
+            item.show();
+        } else {
+            item.hide();
+        }
+    }
 }
 
 async function showErrors(action: () => Promise<void>): Promise<void> {
     try {
         await action();
     } catch (error) {
-        void vscode.window.showErrorMessage(
-            error instanceof Error ? error.message : String(error),
-        );
+        void vscode.window.showErrorMessage(errorMessage(error));
     }
+}
+
+function commandId(command: string): string {
+    return `${commandPrefix}.${command}`;
 }

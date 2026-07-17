@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { XMLParser } from 'fast-xml-parser';
-import { normalizePathSeparators } from './pathUtils';
+import { errorMessage, normalizePathSeparators } from './pathUtils';
 import {
     BuildAction,
     DiscoveryIssue,
@@ -237,19 +237,19 @@ async function discoverByExtension(
             name.toLowerCase().endsWith(`.${extension}`))
         .map(([name]) => vscode.Uri.joinPath(folder.uri, name));
     if (immediate.length > 0) {
-        return immediate.sort((left, right) =>
-            normalizePathSeparators(left.fsPath).localeCompare(
-                normalizePathSeparators(right.fsPath),
-            ));
+        return immediate.sort(compareUris);
     }
     const found = await vscode.workspace.findFiles(
         new vscode.RelativePattern(folder, `**/*.${extension}`),
         discoveryExcludePattern(folder),
     );
-    return found.sort((left, right) =>
-        normalizePathSeparators(left.fsPath).localeCompare(
-            normalizePathSeparators(right.fsPath),
-        ));
+    return found.sort(compareUris);
+}
+
+function compareUris(left: vscode.Uri, right: vscode.Uri): number {
+    return normalizePathSeparators(left.fsPath).localeCompare(
+        normalizePathSeparators(right.fsPath),
+    );
 }
 
 function discoveryExcludePattern(folder: vscode.WorkspaceFolder): string {
@@ -301,8 +301,4 @@ function attribute(value: XmlObject, name: string): string {
 function optionalAttribute(value: XmlObject, name: string): string | undefined {
     const attributeValue = value[`@_${name}`];
     return typeof attributeValue === 'string' ? attributeValue : undefined;
-}
-
-function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
 }

@@ -2,9 +2,12 @@
 .vscode-test/**
 .github/**
 .npm-cache/**
+**/node_modules/**
 *.code-workspace
 src/**
 scripts/**
+*.vsix
+csky-cdk-assistant-*/**
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -13,8 +16,5 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
-out/test/**
-out/extension.js
-out/extension.js.map
-out/assistant.js
-out/main.js
+out/**
+!out/extensionMain.js
