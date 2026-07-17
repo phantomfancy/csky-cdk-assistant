@@ -18,3 +18,4 @@ vsc-extension-quickstart.md
 **/.vscode-test.*
 out/**
 !out/extensionMain.js
+!out/readOnlyCdkRunner.js

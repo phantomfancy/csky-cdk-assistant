@@ -4,7 +4,7 @@
 
 通过官方 `cdk-make.exe` 命令行工具，直接在 Visual Studio Code 中构建 C-SKY Development Kit（CDK）工作区。
 
-本扩展会自行发现并解析 CDK 元数据，不会修改 `.cdkws` 或 `.cdkproj` 文件，也不依赖额外的配套 CLI。
+本扩展会自行发现并解析 CDK 元数据，也不依赖额外的配套 CLI。可选的只读模式用于阻止 `cdk-make.exe` 修改 `.cdkws` 或 `.cdkproj` 文件。
 
 ## 功能
 
@@ -14,6 +14,7 @@
 - 在状态栏显示当前项目和 BuildSet，并提供生成快捷按钮。
 - 使用相对路径将选择结果保存到 `.vscode/csky-cdk.json`。
 - 检查 `cdk-make.exe` 路径、文件信息和项目发现结果。
+- 可开启只读模式，阻止 `cdk-make.exe` 更新工程元数据。
 - 提供英文和简体中文命令标题。
 
 ## 要求与支持范围
@@ -38,6 +39,8 @@ C:/Program Files/C-Sky/CDK/cdk-make.exe
 ## VS Code 任务
 
 扩展提供 `csky-cdk` 任务类型，并为每个已配置的 VS Code 工作区目录生成 build、rebuild 和 clean 任务。构建命令使用 `cdk-make.exe` 原生短参数，例如 `-w`、`-p`、`-c`、`-d` 和 `-a`。
+
+`csky-cdk-assistant.readOnlyMode` 默认为 `false`，此时使用 `cdk-make.exe` 的原生行为，工程元数据可能被改写。开启后会在构建期间保护所选 `.cdkws` 及其引用的全部 `.cdkproj`。
 
 开发说明和已知问题见英文文档 [doc/development.md](doc/development.md)。
 

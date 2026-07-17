@@ -1,9 +1,11 @@
+import * as path from 'path';
 import * as vscode from 'vscode';
 import {
     buildArguments,
     discoverProjects,
     inspectCdkMake,
     resolveCdkMakePath,
+    resolveWorkspaceMetadataFiles,
 } from './cdk';
 import { errorMessage, normalizePathSeparators } from './pathUtils';
 import {
@@ -72,13 +74,21 @@ export function activate(context: vscode.ExtensionContext): void {
 export function deactivate(): void { }
 
 export class CdkTaskProvider implements vscode.TaskProvider {
+    public constructor(private readonly readOnlyModeOverride?: boolean) { }
+
     public async provideTasks(): Promise<vscode.Task[]> {
         const tasks: vscode.Task[] = [];
         for (const folder of vscode.workspace.workspaceFolders ?? []) {
             const selection = await loadSelection(folder);
             if (selection) {
                 tasks.push(...buildCommands.map(([action]) =>
-                    createTask(folder, selection, action)));
+                    createTask(
+                        folder,
+                        selection,
+                        action,
+                        false,
+                        this.readOnlyModeOverride,
+                    )));
             }
         }
         return tasks;
@@ -94,7 +104,15 @@ export class CdkTaskProvider implements vscode.TaskProvider {
             return undefined;
         }
         const selection = await loadSelection(folder);
-        return selection ? createTask(folder, selection, action) : undefined;
+        return selection
+            ? createTask(
+                folder,
+                selection,
+                action,
+                false,
+                this.readOnlyModeOverride,
+            )
+            : undefined;
     }
 }
 
@@ -310,17 +328,40 @@ function createTask(
     selection: Selection,
     action: BuildAction,
     all = false,
+    readOnlyModeOverride?: boolean,
 ): vscode.Task {
+    const executable = resolveCdkMakePath(selection);
+    const args = buildArguments(selection, action, all);
+    const readOnlyMode = readOnlyModeOverride ?? cdkReadOnlyMode(folder);
+    const readOnlyRunner = path.join(__dirname, 'readOnlyCdkRunner.js');
+    const environment = Object.fromEntries(
+        Object.entries(process.env).filter(
+            (entry): entry is [string, string] => entry[1] !== undefined,
+        ),
+    );
+    environment.ELECTRON_RUN_AS_NODE = '1';
+    const execution = readOnlyMode
+        ? new vscode.ProcessExecution(
+            process.execPath,
+            [
+                readOnlyRunner,
+                JSON.stringify(resolveWorkspaceMetadataFiles(selection.workspace)),
+                executable,
+                ...args,
+            ],
+            { cwd: folder.uri.fsPath, env: environment },
+        )
+        : new vscode.ProcessExecution(
+            executable,
+            args,
+            { cwd: folder.uri.fsPath },
+        );
     const task = new vscode.Task(
         { type: 'csky-cdk', action, folder: folder.name },
         folder,
         `C-SKY CDK ${action}${all ? ' all' : ''}`,
         'csky-cdk',
-        new vscode.ProcessExecution(
-            resolveCdkMakePath(selection),
-            buildArguments(selection, action, all),
-            { cwd: folder.uri.fsPath },
-        ),
+        execution,
         cdkProblemMatchers(folder),
     );
     if (action === 'build' && !all) {
@@ -427,6 +468,12 @@ function cdkProblemMatchers(folder: vscode.WorkspaceFolder): string[] {
         .getConfiguration('csky-cdk-assistant', folder.uri)
         .get<string[]>('problemMatchers');
     return configured ?? ['$gcc'];
+}
+
+function cdkReadOnlyMode(folder: vscode.WorkspaceFolder): boolean {
+    return vscode.workspace
+        .getConfiguration('csky-cdk-assistant', folder.uri)
+        .get<boolean>('readOnlyMode', false);
 }
 
 function createStatusBarControls(): StatusBarControls {

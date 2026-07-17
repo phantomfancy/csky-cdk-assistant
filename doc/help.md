@@ -34,9 +34,15 @@
 
 路径统一使用 `/` 作为分隔符。
 
-扩展设置 `csky-cdk-assistant.cdkMakePath` 是全局默认路径。当前 `.cdkws` 同级 `.vscode/csky-cdk.json` 中的 `cdkMakePath` 优先级更高，并对该 Workspace 内的所有项目生效。配置命令只写入当前项目配置，不修改 VS Code 工作区设置。
+扩展设置 `csky-cdk-assistant.cdkMakePath` 是全局默认路径。
+当前 `.cdkws` 同级 `.vscode/csky-cdk.json` 中的 `cdkMakePath` 优先级更高，并对该 Workspace 内的所有项目生效。
+配置命令只写入当前项目配置，不修改 VS Code 工作区设置。
 
 构建任务默认使用 `$gcc` 问题匹配器；若工具链不输出 GCC 兼容诊断，请将 `csky-cdk-assistant.problemMatchers` 设为 `[]`。
+
+`csky-cdk-assistant.readOnlyMode` 默认为 `false`，此时直接运行 `cdk-make.exe`，效果完全和手动执行命令相同。
+`cdk-make.exe`默认运行时有可能修改`.cdkws`和`.cdkproj`内容，如果你不希望这样，可以开启只读模式。
+开启后，构建期间会保护所选 `.cdkws` 及其引用的全部 `.cdkproj`，禁止 `cdk-make.exe` 改写任何内容。
 
 ---
 
@@ -79,3 +85,5 @@ Paths use `/` as the separator.
 The `csky-cdk-assistant.cdkMakePath` extension setting is the global default. A `cdkMakePath` in `.vscode/csky-cdk.json` beside the current `.cdkws` takes precedence for every project in that Workspace. The Configure command only writes the current project configuration and does not change VS Code workspace settings.
 
 Build tasks use the `$gcc` problem matcher by default. Set `csky-cdk-assistant.problemMatchers` to `[]` if the toolchain does not emit GCC-compatible diagnostics.
+
+`csky-cdk-assistant.readOnlyMode` defaults to `false`, so `cdk-make.exe` runs directly and may update project metadata. Enable it to protect the selected `.cdkws` and every referenced `.cdkproj` from all writes while a build runs.

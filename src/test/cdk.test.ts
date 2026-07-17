@@ -69,6 +69,52 @@ suite('C-SKY CDK XML parser', () => {
         }
     });
 
+    test('does not modify workspace or project bytes during discovery', async () => {
+        const root = vscode.Uri.file(path.join(
+            os.tmpdir(),
+            `csky-cdk-assistant-read-only-${process.pid}-${Date.now()}`,
+        ));
+        const workspace = vscode.Uri.joinPath(root, 'test.cdkws');
+        const project = vscode.Uri.joinPath(root, 'test.cdkproj');
+        const workspaceBytes = new TextEncoder().encode([
+            '<CDK_Workspace Name="test">',
+            '    <Project Name="test" Path="test.cdkproj"/>',
+            '</CDK_Workspace>',
+            '',
+        ].join('\r\n'));
+        const projectBytes = new TextEncoder().encode([
+            '<Project Name="test">',
+            '    <BuildConfigs>',
+            '        <BuildConfig Name="BuildSet"/>',
+            '    </BuildConfigs>',
+            '</Project>',
+            '',
+        ].join('\r\n'));
+        try {
+            await vscode.workspace.fs.createDirectory(root);
+            await vscode.workspace.fs.writeFile(workspace, workspaceBytes);
+            await vscode.workspace.fs.writeFile(project, projectBytes);
+
+            const report = await discoverProjects({
+                uri: root,
+                name: 'read_only_fixture',
+                index: 0,
+            });
+
+            assert.strictEqual(report.workspaces.length, 1);
+            assert.deepStrictEqual(
+                Buffer.from(await vscode.workspace.fs.readFile(workspace)),
+                Buffer.from(workspaceBytes),
+            );
+            assert.deepStrictEqual(
+                Buffer.from(await vscode.workspace.fs.readFile(project)),
+                Buffer.from(projectBytes),
+            );
+        } finally {
+            await vscode.workspace.fs.delete(root, { recursive: true, useTrash: false });
+        }
+    });
+
     test('maps workspace selection to cdk-make arguments', () => {
         assert.deepStrictEqual(
             buildArguments({

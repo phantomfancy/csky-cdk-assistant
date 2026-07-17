@@ -108,6 +108,12 @@
                     "scope": "window",
                     "description": "Glob used to exclude directories while recursively discovering .cdkws files."
                 },
+                "csky-cdk-assistant.readOnlyMode": {
+                    "type": "boolean",
+                    "default": false,
+                    "scope": "window",
+                    "description": "Protect .cdkws and referenced .cdkproj files from all changes while cdk-make.exe runs. Disable this to allow cdk-make.exe to update project metadata."
+                },
                 "csky-cdk-assistant.problemMatchers": {
                     "type": "array",
                     "default": [
@@ -148,8 +154,8 @@
         "package": "vsce package",
         "compile": "tsc -p ./ && npm run bundle",
         "compile:production": "tsc -p ./ && npm run bundle:production",
-        "bundle": "esbuild src/extensionMain.ts --bundle --platform=node --format=cjs --target=es2022 --external:vscode --sourcemap --outfile=out/extensionMain.js",
-        "bundle:production": "esbuild src/extensionMain.ts --bundle --platform=node --format=cjs --target=es2022 --external:vscode --minify --outfile=out/extensionMain.js",
+        "bundle": "esbuild src/extensionMain.ts src/readOnlyCdkRunner.ts --bundle --platform=node --format=cjs --target=es2022 --external:vscode --sourcemap --outdir=out --entry-names=[name]",
+        "bundle:production": "esbuild src/extensionMain.ts src/readOnlyCdkRunner.ts --bundle --platform=node --format=cjs --target=es2022 --external:vscode --minify --outdir=out --entry-names=[name]",
         "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "oxlint src",

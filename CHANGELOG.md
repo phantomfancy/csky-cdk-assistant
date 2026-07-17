@@ -2,6 +2,14 @@
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [Unreleased]
+
+### 新增
+
+- 使用esbuild打包器，大幅减小vsix生成大小。
+- 新增可选的只读模式：通过可选的 `csky-cdk-assistant.readOnlyMode` 设置；开启时在构建期间保护 `.cdkws` 及其引用的 `.cdkproj`，关闭后允许 `cdk-make.exe` 使用原生改写行为。
+- 更新依赖和.gitignore.
+
 ## [0.1.0] - 2026-07-16
 
 ### 新增

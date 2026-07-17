@@ -139,6 +139,23 @@ export function buildArguments(
     return args;
 }
 
+export function resolveWorkspaceMetadataFiles(workspacePath: string): string[] {
+    const resolvedWorkspace = path.resolve(workspacePath);
+    const document = object(
+        xmlParser.parse(fs.readFileSync(resolvedWorkspace, 'utf8')),
+        'XML document',
+    );
+    const workspace = object(document.CDK_Workspace, 'CDK_Workspace');
+    const projectPaths = values(workspace.Project).map((value) => {
+        const project = object(value, 'Project');
+        return path.resolve(
+            path.dirname(resolvedWorkspace),
+            attribute(project, 'Path'),
+        );
+    });
+    return uniquePaths([resolvedWorkspace, ...projectPaths]);
+}
+
 async function parseWorkspaceFile(uri: vscode.Uri): Promise<{
     workspace: WorkspaceInfo;
     issues: DiscoveryIssue[];
@@ -250,6 +267,21 @@ function compareUris(left: vscode.Uri, right: vscode.Uri): number {
     return normalizePathSeparators(left.fsPath).localeCompare(
         normalizePathSeparators(right.fsPath),
     );
+}
+
+function uniquePaths(filePaths: readonly string[]): string[] {
+    const result: string[] = [];
+    const seen = new Set<string>();
+    for (const filePath of filePaths) {
+        const key = process.platform === 'win32'
+            ? filePath.toLowerCase()
+            : filePath;
+        if (!seen.has(key)) {
+            seen.add(key);
+            result.push(filePath);
+        }
+    }
+    return result;
 }
 
 function discoveryExcludePattern(folder: vscode.WorkspaceFolder): string {
